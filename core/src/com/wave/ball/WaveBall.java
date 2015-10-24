@@ -2,11 +2,13 @@ package com.wave.ball;
 
 import java.util.ArrayList;
 
+import utils.AccelerationManager;
 import utils.InputHandler;
 import utils.TimeSnapshot;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -14,8 +16,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 
 import entities.CounterWave;
-import entities.RectangleEnemy;
 import entities.MainWave;
+import entities.StraightLine;
 
 public class WaveBall extends ApplicationAdapter {
 	private ShapeRenderer renderer;
@@ -24,11 +26,12 @@ public class WaveBall extends ApplicationAdapter {
 	private float screenHeight;
 	private MainWave wave;
 	private CounterWave counterWave;
+	private StraightLine straightWave;
 	private InputHandler inputHandler;
 	private float camSpeedNormal;
 	private float camSpeedTrailing;
-	private ArrayList<RectangleEnemy> rectangleEnemies = new ArrayList<RectangleEnemy>();
 	private TimeSnapshot _timeSnapshot = new TimeSnapshot();
+	private float cameraX = 0.0f;
 	
 	@Override
 	public void create() {
@@ -38,12 +41,15 @@ public class WaveBall extends ApplicationAdapter {
 		cam.setToOrtho(false, screenWidth, screenHeight);
 		renderer = new ShapeRenderer();
 		renderer.setProjectionMatrix(cam.combined);
-		camSpeedNormal = (float) screenWidth / 10.0f;
-		camSpeedTrailing = (float) screenWidth / 20.0f;
+		camSpeedNormal = (float) screenWidth / 3.0f;
+		camSpeedTrailing = (float) screenWidth / 8.0f;
 		wave = new MainWave(0.0f, screenHeight / 6.0f, 2, camSpeedNormal, screenHeight / 60.0f, screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f));
-		counterWave = new CounterWave((float) (Math.PI), screenHeight / 6.0f, 2, camSpeedNormal, screenHeight / 60.0f, screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f));
+//		counterWave = new CounterWave((float) (Math.PI), screenHeight / 6.0f, 2, camSpeedNormal, screenHeight / 60.0f, screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f));
+		straightWave = new StraightLine(screenWidth / 10.0f, screenWidth, screenHeight, new Color(1.0f, 0.0f, 0.0f, 0.5f));
 		inputHandler = new InputHandler(screenWidth, screenHeight, this);
 		Gdx.input.setInputProcessor(inputHandler);
+		AccelerationManager.screenWidth = screenWidth;
+		AccelerationManager.PERIOD = (int) (2 * screenWidth);
 	}
 
 	@Override
@@ -55,42 +61,29 @@ public class WaveBall extends ApplicationAdapter {
 		renderer.setProjectionMatrix(cam.combined);
 		renderer.begin(ShapeType.Filled);
 		wave.update();
-		counterWave.update();
-		wave.render(renderer, screenWidth, screenHeight);
-		counterWave.render(renderer, screenWidth, screenHeight);
-		updateAndRenderEnemies();
+//		counterWave.update(cameraX);
+		straightWave.update(cameraX);
+		wave.render(renderer, screenWidth, screenHeight, cameraX);
+//		counterWave.render(renderer, screenWidth, screenHeight, cameraX);
+		straightWave.render(renderer, screenWidth, screenHeight, cameraX);
 		renderer.end();
 	}
 	
 	private void manageCameraTranslation() {
-		long delta = _timeSnapshot .snapshot();
-		if ((float)((int)wave.getBallX() % (int)screenWidth) / screenWidth < 0.35f) {
+		long delta = _timeSnapshot.snapshot();
+		if ((float)((int)wave.getBallX() - cameraX) / screenWidth >= 0.35f) {
 			cam.translate(camSpeedNormal * delta / 1000.0f, 0.0f);
+			cameraX += camSpeedNormal * delta / 1000.0f;
 		} else {
 			cam.translate(camSpeedTrailing * delta / 1000.0f, 0.0f);
+			cameraX += camSpeedTrailing * delta / 1000.0f;
 		}
 	}
 	
-	private void updateAndRenderEnemies() {
-		for (RectangleEnemy enemy: rectangleEnemies) {
-			enemy.update();
-			enemy.render(renderer);
-		}
-	}
 	public void touchDown(InputHandler.UserInput input) {
-		switch (input) {
-		case LEFT:
-			wave.startLeft();
-			counterWave.startLeft();
-			break;
-		case RIGHT:
-			wave.startRight();
-			counterWave.startRight();
-			break;
-		}
+		wave.start();
 	}
 	public void touchUp(InputHandler.UserInput input) {
 		wave.stop();
-		counterWave.stop();
 	}
 }

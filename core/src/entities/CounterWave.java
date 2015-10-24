@@ -18,37 +18,36 @@ public class CounterWave extends Wave {
 		super(phase, amplitude, frequency, speed, screenWidth, screenHeight, color);
 		_radius = radius;
 	}
-	public void update() {
-		super.update();
+	public void update(float cameraX) {
 		if (System.currentTimeMillis() - _lastEnemyLauchTime > enemyFrequency) {
-			addEnemy();
+			addEnemy(cameraX);
 			_lastEnemyLauchTime = System.currentTimeMillis();
 		}
 		long timeDiff = _timeSnapshot.snapshot();
 		for (CircleEnemy enemy: _enemies) {
-			enemy._x += (timeDiff * enemy._speed);
+			enemy._x += (timeDiff * enemy._speed / 1000.0f);
 		}
-		tryRemoveEnemy();
+		tryRemoveEnemy(cameraX);
 	}
-	private void addEnemy() {
-		_enemies.add(new CircleEnemy(_translationX,  _screenWidth / 100, (float) Math.PI / 50.0f));
+	private void addEnemy(float cameraX) {
+		_enemies.add(new CircleEnemy(cameraX,  _screenWidth / 100, (float) _screenWidth / 2.0f));
 	}
-	private void tryRemoveEnemy() {
+	private void tryRemoveEnemy(float cameraX) {
 		if (_enemies.size() == 0) {
 			return;
 		}
 		CircleEnemy enemy = _enemies.get(0);
-		if (enemy._x > _translationX + _screenWidth) {
+		if (enemy._x > cameraX + _screenWidth) {
 			_enemies.remove(0);
 		}
 	}
-	public void render(ShapeRenderer renderer, float screenWidth, float screenHeight) {
-		super.render(renderer);
+	public void render(ShapeRenderer renderer, float screenWidth, float screenHeight, float cameraX) {
+		super.render(renderer, cameraX);
 		float waveWidth = screenWidth / _frequency;
 		float angleToWidth = (float) (waveWidth / (2 * Math.PI));
 		for (CircleEnemy enemy: _enemies) {
 			float ballAngle = ((int) enemy._x % (int)waveWidth) / angleToWidth;
-			float ballY = (float) Math.sin(ballAngle) * _amplitude + screenHeight / 2;
+			float ballY = (float) Math.sin(-ballAngle) * _amplitude + screenHeight / 2;
 			drawCircle(renderer, enemy._x, ballY, _radius);
 		}
 	}
