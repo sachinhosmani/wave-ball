@@ -2,53 +2,70 @@ package entities;
 
 import java.util.LinkedList;
 
+import utils.AccelerationManager;
 import utils.CircleEnemy;
 import utils.TimeSnapshot;
+import utils.WaveEquation;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 public class CounterWave extends Wave {
-	protected LinkedList<CircleEnemy> _enemies = new LinkedList<CircleEnemy>();
+	public LinkedList<CircleEnemy> _enemies = new LinkedList<CircleEnemy>();
 	protected float _radius;
-	protected long _lastEnemyLauchTime = System.currentTimeMillis();
-	private static final long enemyFrequency = 1000;
-	TimeSnapshot _timeSnapshot = new TimeSnapshot();
-	public CounterWave(float phase, float amplitude, int frequency, float speed, float radius, float ballX, float screenWidth, float screenHeight, Color color) {
-		super(phase, amplitude, frequency, speed, screenWidth, screenHeight, color);
+	protected float _lastEnemyLaunchX = 0.0f;
+	private float _enemyFrequency;
+	private static final Color color = new Color(1.0f, 0.0f, 0.0f, 0.9f);
+	private AccelerationManager _accelerationManager;
+	private TimeSnapshot _timeSnapshot = new TimeSnapshot();
+	private static Color waveColor = new Color(1.0f, 0.2f, 0.3f, 0.5f);
+	public CounterWave(float phase, float amplitude, float speed, float radius,
+			float ballX, float screenWidth, float screenHeight, Color color, WaveEquation waveEquation) {
+		super(phase, amplitude, speed, screenWidth, screenHeight, color);
 		_radius = radius;
+		_enemyFrequency = screenWidth / 3.0f;
+		_accelerationManager = new AccelerationManager(screenWidth, screenHeight, 5 * screenWidth, screenWidth / 100.0f,
+				screenWidth / 40.0f, screenWidth / 2.5f, screenWidth / 1.3f, screenWidth / 2.0f, waveEquation);
+		_enemies.add(new CircleEnemy(screenWidth / 4.0f, 0.0f,  _screenWidth / 100, (float) _screenWidth / 2.0f));
+		_enemies.add(new CircleEnemy(3 * screenWidth / 4.0f, screenWidth / 2.0f,  _screenWidth / 100, (float) _screenWidth / 2.0f));
+	}
+	public void setWaveEquation(WaveEquation waveEquation) {
+		_waveEquation = waveEquation;
 	}
 	public void update(float cameraX) {
-		if (System.currentTimeMillis() - _lastEnemyLauchTime > enemyFrequency) {
-			addEnemy(cameraX);
-			_lastEnemyLauchTime = System.currentTimeMillis();
-		}
+		tryAddEnemy(cameraX);
 		long timeDiff = _timeSnapshot.snapshot();
 		for (CircleEnemy enemy: _enemies) {
-			enemy._x += (timeDiff * enemy._speed / 1000.0f);
+			enemy._speed = _accelerationManager.get(enemy._x);
+			_waveEquation.getDerivative(enemy._x, _tmpVector);
+			float x = enemy._x + (timeDiff * enemy._speed / 1000.0f) / _tmpVector.len() * _screenWidth / 1000.0f;
+			_waveEquation.get(x, _tmpVector);
+			float y = _tmpVector.y;
+			y = _screenHeight / 2.0f + (_screenHeight / 2.0f - y) / 2.0f;
+			enemy.updatePosition(x, y);
 		}
 		tryRemoveEnemy(cameraX);
+		
+		_enemyFrequency = Math.max(_enemyFrequency - _screenWidth / 10000.0f, _screenWidth / 4.0f); 
 	}
-	private void addEnemy(float cameraX) {
-		_enemies.add(new CircleEnemy(cameraX,  _screenWidth / 100, (float) _screenWidth / 2.0f));
+	private void tryAddEnemy(float cameraX) {
+		if (_enemies.size() == 0 || _enemies.get(_enemies.size() - 1)._x - cameraX > _enemyFrequency) {
+			_enemies.add(new CircleEnemy(cameraX, 0.0f,  _screenWidth / 100, (float) _screenWidth / 2.0f));
+		}
 	}
 	private void tryRemoveEnemy(float cameraX) {
 		if (_enemies.size() == 0) {
 			return;
 		}
 		CircleEnemy enemy = _enemies.get(0);
-		if (enemy._x > cameraX + _screenWidth) {
-			_enemies.remove(0);
+		if (enemy._x > cameraX + _screenWidth || enemy._x < cameraX - _screenWidth) {
+			_enemies.remove(enemy);
 		}
 	}
-	public void render(ShapeRenderer renderer, float screenWidth, float screenHeight, float cameraX) {
-		super.render(renderer, cameraX);
-		float waveWidth = screenWidth / _frequency;
-		float angleToWidth = (float) (waveWidth / (2 * Math.PI));
+	public void render(ShapeRenderer renderer, float cameraX) {
+		super.render(renderer, cameraX, true, waveColor);
 		for (CircleEnemy enemy: _enemies) {
-			float ballAngle = ((int) enemy._x % (int)waveWidth) / angleToWidth;
-			float ballY = (float) Math.sin(-ballAngle) * _amplitude + screenHeight / 2;
-			drawCircle(renderer, enemy._x, ballY, _radius);
+			drawCircle(renderer, enemy._x, enemy._y, _radius, color);
 		}
 	}
 }

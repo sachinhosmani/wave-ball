@@ -1,52 +1,81 @@
 package entities;
 
-import utils.Acceleration;
-import utils.TimeSnapshot;
-
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
+
+import utils.TimeSnapshot;
+import utils.WaveEquation;
 
 public class Wave {
 	protected float _phase;
 	protected float _amplitude;
-	protected int _frequency;
 	protected float _speed;
 	protected static int numComponentsPerWave = 50;
 	protected TimeSnapshot _timeSnapshot = new TimeSnapshot();
 	protected float _screenWidth;
 	protected float _screenHeight;
 	protected Color _color;
-	public Wave(float phase, float amplitude, int frequency, float speed, float screenWidth, float screenHeight, Color color) {
+	protected WaveEquation _waveEquation;
+	protected Float _startX = null;
+	protected Vector2 _tmpVector = new Vector2();
+	public Wave(float phase, float amplitude, float speed, float screenWidth, float screenHeight, Color color) {
 		_phase = phase;
 		_amplitude = amplitude;
-		_frequency = frequency;
 		_speed = speed;
 		_screenWidth = screenWidth;
 		_screenHeight = screenHeight;
 		_color = color;
 	}
-	public void render(ShapeRenderer renderer, float cameraX) {
-		float waveWidth = _screenWidth / _frequency;
-		float angleToWidth = (float) (waveWidth / (2 * Math.PI));
-		float angle = (float) (0.0f + 2 * Math.PI / numComponentsPerWave);
-		float phase = (float)(((int)cameraX % (int)waveWidth) * Math.PI * 2.0f / waveWidth) + _phase; 
-		float prevX = cameraX, prevY = (float) Math.sin(phase) * _amplitude + _screenHeight / 2;
-		for (int i = 0; i < _frequency; i++) {
-			for (angle = 0.0f; angle < 2 * Math.PI; angle += 2 * Math.PI / numComponentsPerWave) {
-				float x = cameraX + angle * angleToWidth + i * waveWidth;
-				float y = (float) Math.sin(angle + phase) * _amplitude + _screenHeight / 2;
-				drawLine(renderer, prevX, prevY, x, y, _screenWidth / 200);
+	public Float getStartX() {
+		return _startX;
+	}
+	public void render(ShapeRenderer renderer, float cameraX, Color color) {
+		render(renderer, cameraX, false, color);
+	}
+	public void render(ShapeRenderer renderer, float cameraX, boolean opposite, Color color) {
+		float y = 0.0f;
+		float prevX = (_startX != null) ? _startX : cameraX;
+		_waveEquation.get(prevX, _tmpVector);
+		float prevY = _tmpVector.y;
+		if (opposite) {
+			prevY = _screenHeight / 2.0f + (_screenHeight / 2.0f - prevY) / 2.0f;
+		}
+		float damping = 1.0f;
+		float dampingFraction = 1.0f;
+		boolean firstTime = true;
+		for (float x = cameraX; x <= cameraX + _screenWidth * 1.01f; x += _screenWidth / 200.0f) {
+			if (x < prevX) {
+				continue;
+			} else if (firstTime) {
+				firstTime = false;
 				prevX = x;
-				prevY = y;
 			}
+			_waveEquation.get(x, _tmpVector);
+			y = _tmpVector.y;
+			if (opposite) {
+				y = _screenHeight / 2.0f + (_screenHeight / 2.0f - y) / 2.0f;
+			}
+			if (!opposite && x - cameraX > _screenWidth * 0.8f) {
+				damping *= dampingFraction;
+				dampingFraction *= 0.995f;
+			}
+			y = (y - _screenHeight / 2.0f) * damping + _screenHeight / 2.0f;
+			drawLine(renderer, x, y, prevX, prevY, _screenWidth / 200.0f, color);
+			prevY = y;
+			prevX = x;
 		}
 	}
-	public void drawLine(ShapeRenderer renderer, float x1, float y1, float x2, float y2, float width) {
-		renderer.setColor(0.0f, 1.0f, 0.0f, 0.5f);
+	public void drawLine(ShapeRenderer renderer, float x1, float y1, float x2, float y2, float width, Color color) {
+		renderer.setColor(color);
 		renderer.rectLine(x1, y1, x2, y2, width);
 	}
-	public void drawCircle(ShapeRenderer renderer, float x, float y, float r) {
-		renderer.setColor(0.0f, 0.0f, 1.0f, 1.0f);
+	public void drawCircle(ShapeRenderer renderer, float x, float y, float r, Color c) {
+		renderer.setColor(c);
 		renderer.circle(x, y, r);
+	}
+	public float normalizeAngle(float angle) {
+		return angle - (float) ((int)(angle / 2 / Math.PI) * 2 * Math.PI);
 	}
 }

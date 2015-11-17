@@ -1,23 +1,23 @@
 package com.wave.ball;
 
-import java.util.ArrayList;
-
-import utils.AccelerationManager;
-import utils.InputHandler;
-import utils.TimeSnapshot;
-
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.math.Intersector;
 
 import entities.CounterWave;
 import entities.MainWave;
-import entities.StraightLine;
+import entities.Rotator;
+import entities.ScoreBoard;
+import utils.CircleEnemy;
+import utils.InputHandler;
+import utils.WaveEquation;
 
 public class WaveBall extends ApplicationAdapter {
 	private ShapeRenderer renderer;
@@ -26,13 +26,18 @@ public class WaveBall extends ApplicationAdapter {
 	private float screenHeight;
 	private MainWave wave;
 	private CounterWave counterWave;
-	private StraightLine straightWave;
 	private InputHandler inputHandler;
 	private float camSpeedNormal;
-	private float camSpeedTrailing;
-	private TimeSnapshot _timeSnapshot = new TimeSnapshot();
 	private float cameraX = 0.0f;
+	FPSLogger logger = new FPSLogger();
 	
+	private float _ballSize;
+	private float _enemySize;
+	private float _waveAmplitude;
+	private float _counterWaveAmplitude;
+	private ScoreBoard _scoreBoard;
+	
+	private SpriteBatch _spriteBatch;
 	@Override
 	public void create() {
 		screenWidth = Gdx.graphics.getWidth();
@@ -41,42 +46,86 @@ public class WaveBall extends ApplicationAdapter {
 		cam.setToOrtho(false, screenWidth, screenHeight);
 		renderer = new ShapeRenderer();
 		renderer.setProjectionMatrix(cam.combined);
-		camSpeedNormal = (float) screenWidth / 3.0f;
-		camSpeedTrailing = (float) screenWidth / 8.0f;
-		wave = new MainWave(0.0f, screenHeight / 6.0f, 2, camSpeedNormal, screenHeight / 60.0f, screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f));
-//		counterWave = new CounterWave((float) (Math.PI), screenHeight / 6.0f, 2, camSpeedNormal, screenHeight / 60.0f, screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f));
-		straightWave = new StraightLine(screenWidth / 10.0f, screenWidth, screenHeight, new Color(1.0f, 0.0f, 0.0f, 0.5f));
+		_spriteBatch = new SpriteBatch();
+		_spriteBatch.setProjectionMatrix(cam.combined);
+		camSpeedNormal = (float) screenWidth / 4.8f;
+		
+		_ballSize = screenWidth / 80.0f;
+		_waveAmplitude = screenWidth / 13.0f;
+		_enemySize = screenWidth / 100.0f;
+		_counterWaveAmplitude = screenWidth / 18.0f;
+
+		WaveEquation.initSize(screenWidth * 100, screenWidth / 1000.0f);
+		wave = new MainWave(0.0f, _waveAmplitude, 2, camSpeedNormal, _ballSize, screenWidth / 2.0f,
+				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f));
+		counterWave = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
+				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation());
+		counterWave.setWaveEquation(wave.getWaveEquation());
 		inputHandler = new InputHandler(screenWidth, screenHeight, this);
 		Gdx.input.setInputProcessor(inputHandler);
-		AccelerationManager.screenWidth = screenWidth;
-		AccelerationManager.PERIOD = (int) (2 * screenWidth);
+		_scoreBoard = new ScoreBoard(screenWidth, screenHeight);
 	}
 
 	@Override
 	public void render() {
+		logger.log();
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		manageCameraTranslation();
 		cam.update();
+		Gdx.gl.glEnable(GL20.GL_BLEND);
+	    Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		renderer.setProjectionMatrix(cam.combined);
 		renderer.begin(ShapeType.Filled);
-		wave.update();
-//		counterWave.update(cameraX);
-		straightWave.update(cameraX);
-		wave.render(renderer, screenWidth, screenHeight, cameraX);
-//		counterWave.render(renderer, screenWidth, screenHeight, cameraX);
-		straightWave.render(renderer, screenWidth, screenHeight, cameraX);
+		wave.render(renderer, cameraX);
+		wave.update(cameraX);
+		counterWave.render(renderer, cameraX);
+		counterWave.update(cameraX);
+		checkGameEnd();
 		renderer.end();
+		
+		_spriteBatch.setProjectionMatrix(cam.combined);
+		_spriteBatch.begin();
+		_scoreBoard.render(_spriteBatch, cameraX);
+		_spriteBatch.end();
+		Gdx.gl.glDisable(GL20.GL_BLEND);
+		
+		_scoreBoard.update();
+	}
+	
+	public void checkGameEnd() {
+		if (wave.getBallX() < wave.getStartX()) {
+			restartGame();
+		}
+		for (CircleEnemy enemy: counterWave._enemies) {
+			if (Intersector.overlaps(enemy.shape, wave.ballShape)) {
+				restartGame();
+				return;
+			}
+		}
+		for (Rotator rotator: wave._rotators) {
+			if (rotator.checkCollision(wave.ballVector, wave.getRadius())) {
+				restartGame();
+				return;
+			}
+		}
+	}
+	
+	public void restartGame() {
+		wave = new MainWave(0.0f, _waveAmplitude, 2, camSpeedNormal, _ballSize, screenWidth / 2.0f,
+				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f));
+		counterWave = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
+				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation());
+		counterWave.setWaveEquation(wave.getWaveEquation());
+		cam.translate(-cameraX, 0.0f);
+		cameraX = 0.0f;
+		_scoreBoard.reset();
 	}
 	
 	private void manageCameraTranslation() {
-		long delta = _timeSnapshot.snapshot();
-		if ((float)((int)wave.getBallX() - cameraX) / screenWidth >= 0.35f) {
-			cam.translate(camSpeedNormal * delta / 1000.0f, 0.0f);
-			cameraX += camSpeedNormal * delta / 1000.0f;
-		} else {
-			cam.translate(camSpeedTrailing * delta / 1000.0f, 0.0f);
-			cameraX += camSpeedTrailing * delta / 1000.0f;
+		if ((float)((int)wave.getBallX() - cameraX) / screenWidth >= 0.5f) {
+			cam.translate(wave.getBallX() - cameraX - screenWidth * 0.5f, 0.0f);
+			cameraX += wave.getBallX() - cameraX - screenWidth * 0.5f;
 		}
 	}
 	

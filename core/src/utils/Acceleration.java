@@ -27,4 +27,7 @@ public class Acceleration {
 			_speed = Math.min(_maxSpeed, _speed + delta * _acceleration);
 		}
 	}
+	public void setMaxSpeed(float maxSpeed) {
+		_maxSpeed = maxSpeed;
+	}
 }
