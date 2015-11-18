@@ -86,11 +86,10 @@ public class WaveBall extends ApplicationAdapter {
 		
 		_spriteBatch.setProjectionMatrix(cam.combined);
 		_spriteBatch.begin();
-		_scoreBoard.render(_spriteBatch, cameraX);
+		_scoreBoard.render(_spriteBatch, cameraX, wave.getScore());
 		_spriteBatch.end();
 		Gdx.gl.glDisable(GL20.GL_BLEND);
 		
-		_scoreBoard.update();
 	}
 	
 	public void checkGameEnd() {
@@ -119,7 +118,6 @@ public class WaveBall extends ApplicationAdapter {
 		counterWave.setWaveEquation(wave.getWaveEquation());
 		cam.translate(-cameraX, 0.0f);
 		cameraX = 0.0f;
-		_scoreBoard.reset();
 	}
 	
 	private void manageCameraTranslation() {

@@ -36,7 +36,7 @@ public class WaveEquation {
 		float frequencyChangeWindow = findFrequencyChangeWindow(screenWidth);
 		float rotatorFrequency = screenWidth / 2.0f;
 		phaseClassifier = new PhaseClassifier(screenWidth);
-		float lastRotatorX = 0.0f;
+		float lastRotatorX = screenWidth;
 		float x;
 		boolean first = false, second = false;
 		for (x = 0.0f; i < size; x += granularity) {
@@ -69,17 +69,20 @@ public class WaveEquation {
 				lastFrequencyChangeX = x;
 				frequencyChangeWindow = findFrequencyChangeWindow(screenWidth);
 			}
-			if (first && second && x - lastRotatorX < screenWidth / 100.0f && phaseClassifier.getPhase(x) > 3 && angleDelta < 0.6 * baseAngleDelta) {
+			if (!first && second && Math.abs(x - lastRotatorX - screenWidth / 7.0f) < screenWidth / 50.0f &&
+					phaseClassifier.getPhase(x) >= 3 && angleDelta < 0.6 * baseAngleDelta) {
 				rotatorPositions.add(0, x);
 				lastRotatorX = x;
 				first = second = false;
 			}
-			if (first && !second && x - lastRotatorX < screenWidth / 100.0f && phaseClassifier.getPhase(x) > 1 && angleDelta < 0.6 * baseAngleDelta) {
+			if (first && !second && Math.abs(x - lastRotatorX - screenWidth / 7.0f) < screenWidth / 50.0f &&
+					phaseClassifier.getPhase(x) >= 2 && angleDelta < 0.6 * baseAngleDelta) {
 				rotatorPositions.add(0, x);
 				lastRotatorX = x;
 				second = true;
+				first = false;
 			}
-			if (x - lastRotatorX > MathUtils.random(0.7f, 1.5f) * rotatorFrequency) {
+			if (x - lastRotatorX > MathUtils.random(0.9f, 1.5f) * rotatorFrequency) {
 				rotatorPositions.add(0, x);
 				lastRotatorX = x;
 				first = true;

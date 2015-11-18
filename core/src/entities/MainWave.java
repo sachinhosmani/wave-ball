@@ -1,5 +1,6 @@
 package entities;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 import com.badlogic.gdx.graphics.Color;
@@ -32,6 +33,10 @@ public class MainWave extends Wave {
 	private float _ballMaxBoostedSpeed;
 	private static Color waveColor = new Color(0.0f, 1.0f, 0.0f, 0.5f);
 	private float _baseAngleDelta;
+	private int _score;
+	private ArrayList<Float> _rotatorPositions;
+	
+	private float lastX = 0.0f;
 	public float getBallX() {
 		return _ballX;
 	}
@@ -57,6 +62,8 @@ public class MainWave extends Wave {
 		_phaseClassifier = new PhaseClassifier(screenWidth);
 		_ballMaxSpeed = speed;
 		_ballMaxBoostedSpeed = speed * 1.2f;
+		_score = 0;
+		_rotatorPositions = new ArrayList<Float>();
 	}
 
 	public void update(float cameraX) {
@@ -68,11 +75,11 @@ public class MainWave extends Wave {
 		} else {
 			_acceleration.stop();
 		}
-//		System.out.println((cameraX + _screenWidth) + " " + _waveEquation.peekNextRotatorPosition());
 		if (!_waveEquation.allRotatorsDone() && (cameraX + _screenWidth) > _waveEquation.peekNextRotatorPosition()) {
 			float xPos = _waveEquation.peekNextRotatorPosition();
 			_waveEquation.popRotatorPosition();
 			addRotator(xPos);
+			_rotatorPositions.add(xPos);
 		}
 		_acceleration.update(timeElapsed);
 		increasePhase(timeElapsed * _acceleration.getSpeed() / 1000);
@@ -88,6 +95,7 @@ public class MainWave extends Wave {
 		tryRemoveRotator(cameraX);
 		rotatorWidth = Math.max(_screenWidth / 20.0f, rotatorWidth - _screenWidth / 80000.0f);
 		camSpeedTrailing = Math.min(camSpeedTrailing + _screenWidth / 25000.0f, 1.5f * _screenWidth / 5.0f);
+		updateScore();
 	}
 	protected void updateBallMaxSpeed() {
 		boolean found = false;
@@ -108,6 +116,20 @@ public class MainWave extends Wave {
 		_ballX += delta / _tmpVector.len() * _screenWidth / 500.0f;
 	}
 	
+	public int getScore() {
+		return _score;
+	}
+	
+	public void updateScore() {
+		if (_rotatorPositions.size() == 0) {
+			return;
+		}
+		if (_ballX > _rotatorPositions.get(0) + _screenWidth / 10.0f) {
+			_score++;
+			_rotatorPositions.remove(0);
+		}
+	}
+	
 	public void render(ShapeRenderer renderer, float cameraX) {
 		super.render(renderer, cameraX, waveColor);
 		drawCircle(renderer, _ballX, _ballY, _radius, color);
@@ -121,8 +143,7 @@ public class MainWave extends Wave {
 	public void stop() {
 		moving = false;
 	}
-	private void addRotator(float cameraX) {
-		float x = cameraX + _screenWidth + (float) Math.random() * _screenWidth * 0.4f;
+	private void addRotator(float x) {
 		_waveEquation.get(x, _tmpVector);
 		boolean clockwise = rotatorClockwise();
 		_lastRotatorClockwise = clockwise;

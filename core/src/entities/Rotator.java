@@ -37,7 +37,7 @@ public class Rotator {
 		_x = x;
 		_y = y;
 		_screenWidth = screenWidth;
-		float rotatorLength = _screenWidth / 20.0f;
+		float rotatorLength = _screenWidth / 25.0f;
 		point1 = new Vector2(-rotatorLength / 2.0f, -rotatorWidth / 2.0f);
 		point2 = new Vector2(rotatorLength / 2.0f, -rotatorWidth / 2.0f);
 		point3 = new Vector2(-rotatorLength / 2.0f, rotatorWidth / 2.0f);

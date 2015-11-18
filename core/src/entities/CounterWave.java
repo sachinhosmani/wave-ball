@@ -23,11 +23,11 @@ public class CounterWave extends Wave {
 			float ballX, float screenWidth, float screenHeight, Color color, WaveEquation waveEquation) {
 		super(phase, amplitude, speed, screenWidth, screenHeight, color);
 		_radius = radius;
-		_enemyFrequency = screenWidth / 3.0f;
-		_accelerationManager = new AccelerationManager(screenWidth, screenHeight, 5 * screenWidth, screenWidth / 100.0f,
-				screenWidth / 40.0f, screenWidth / 2.5f, screenWidth / 1.3f, screenWidth / 2.0f, waveEquation);
-		_enemies.add(new CircleEnemy(screenWidth / 4.0f, 0.0f,  _screenWidth / 100, (float) _screenWidth / 2.0f));
-		_enemies.add(new CircleEnemy(3 * screenWidth / 4.0f, screenWidth / 2.0f,  _screenWidth / 100, (float) _screenWidth / 2.0f));
+		_enemyFrequency = screenWidth / 2.7f;
+		_accelerationManager = new AccelerationManager(screenWidth, screenHeight, 100 * screenWidth, screenWidth / 100.0f,
+				screenWidth / 40.0f, screenWidth / 2.5f, screenWidth / 1.8f, screenWidth / 2.0f, waveEquation);
+//		_enemies.add(new CircleEnemy(screenWidth / 2.0f, 0.0f,  _screenWidth / 100, (float) _screenWidth / 2.0f));
+//		_enemies.add(new CircleEnemy(3 * screenWidth / 4.0f, screenWidth / 2.0f,  _screenWidth / 100, (float) _screenWidth / 2.0f));
 	}
 	public void setWaveEquation(WaveEquation waveEquation) {
 		_waveEquation = waveEquation;
@@ -46,10 +46,10 @@ public class CounterWave extends Wave {
 		}
 		tryRemoveEnemy(cameraX);
 		
-		_enemyFrequency = Math.max(_enemyFrequency - _screenWidth / 10000.0f, _screenWidth / 4.0f); 
+		_enemyFrequency = Math.max(_enemyFrequency - _screenWidth / 10000.0f, _screenWidth / 3.7f); 
 	}
 	private void tryAddEnemy(float cameraX) {
-		if (_enemies.size() == 0 || _enemies.get(_enemies.size() - 1)._x - cameraX > _enemyFrequency) {
+		if ((cameraX > _screenWidth / 4.0f) && (_enemies.size() == 0 || _enemies.get(_enemies.size() - 1)._x - cameraX > _enemyFrequency)) {
 			_enemies.add(new CircleEnemy(cameraX, 0.0f,  _screenWidth / 100, (float) _screenWidth / 2.0f));
 		}
 	}

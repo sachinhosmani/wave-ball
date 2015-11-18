@@ -25,7 +25,7 @@ public class AccelerationManager {
 		float accelerationDelta = getAccelerationDelta();
 		
 		float x = 0.0f;
-		for (; _phaseClassifier.getPhase(x) == 1; x += granularity) {
+		for (; _phaseClassifier.getPhase(x) <= 2; x += granularity) {
 			controlPoints[i++] = new Vector2(x, speed);
 		}
 		
