@@ -35,6 +35,7 @@ public class MainWave extends Wave {
 	private float _baseAngleDelta;
 	private int _score;
 	private ArrayList<Float> _rotatorPositions;
+	private float _rotatorSpeed;
 	
 	private float lastX = 0.0f;
 	public float getBallX() {
@@ -49,7 +50,7 @@ public class MainWave extends Wave {
 	public MainWave(float phase, float amplitude, int frequency, float speed, float radius, float ballX,
 			float screenWidth, float screenHeight, Color color) {
 		super(phase, amplitude, speed, screenWidth, screenHeight, color);
-		_baseAngleDelta = 2 * ((float) Math.PI) / 500.0f;
+		_baseAngleDelta = 2 * ((float) Math.PI) / 700.0f;
 		_waveEquation = new WaveEquation(amplitude, _baseAngleDelta, screenWidth,
 				screenHeight / 2.0f, _baseAngleDelta / 2500.0f, amplitude / 2000.0f);
 		_ballX = ballX;
@@ -58,12 +59,13 @@ public class MainWave extends Wave {
 		ballShape = new Circle(0.0f, 0.0f, _radius);
 		_startX = 0.0f;
 		camSpeedTrailing = (float) screenWidth / 5.0f;
-		rotatorWidth = _screenWidth / 14.0f;
+		rotatorWidth = _screenWidth / 13.0f;
 		_phaseClassifier = new PhaseClassifier(screenWidth);
 		_ballMaxSpeed = speed;
 		_ballMaxBoostedSpeed = speed * 1.2f;
 		_score = 0;
 		_rotatorPositions = new ArrayList<Float>();
+		_rotatorSpeed = (float) Math.PI / 1300.0f;
 	}
 
 	public void update(float cameraX) {
@@ -94,8 +96,12 @@ public class MainWave extends Wave {
 		}
 		tryRemoveRotator(cameraX);
 		rotatorWidth = Math.max(_screenWidth / 20.0f, rotatorWidth - _screenWidth / 80000.0f);
-		camSpeedTrailing = Math.min(camSpeedTrailing + _screenWidth / 25000.0f, 1.5f * _screenWidth / 5.0f);
+		camSpeedTrailing = Math.min(camSpeedTrailing + _screenWidth / 40000.0f, 1.5f * _screenWidth / 5.0f);
 		updateScore();
+		_ballMaxSpeed = Math.min(_ballMaxSpeed + _screenWidth / 40000.0f, 2.0f * _screenWidth / 5.0f);
+		_ballMaxBoostedSpeed = _ballMaxSpeed * 1.2f;
+		
+		_rotatorSpeed += (float) Math.PI / 1300.0f / 40000.0f;
 	}
 	protected void updateBallMaxSpeed() {
 		boolean found = false;
@@ -151,8 +157,10 @@ public class MainWave extends Wave {
 		float y = _tmpVector.y;
 		_waveEquation.getDerivative(x, _tmpVector);
 		float angle = (float) Math.atan2(_tmpVector.y, _tmpVector.x);
-		_rotators.add(new Rotator(angle, (float) Math.PI / 1300.0f, normalizeAngle(0.0f + (float) Math.PI / 2.0f),
+		float rotatorSpeed = getRotatorSpeed(x);
+		_rotators.add(new Rotator(angle, rotatorSpeed, normalizeAngle(0.0f + (float) Math.PI / 2.0f),
 				0, x, y, _screenWidth, _screenHeight, rotatorWidth, clockwise, alternating));
+		_lastRotatorLaunchX = x;
 	}
 	private boolean checkIfRotatorAddable(float x, float y) {
 		_waveEquation.get(x - _screenWidth / 10.0f, _tmpVector);
@@ -179,10 +187,19 @@ public class MainWave extends Wave {
 		if (_phaseClassifier.getPhase(_ballX) == 1) {
 			return true;
 		}
-		if (_ballX - _lastRotatorLaunchX <= _screenWidth / 100.0f) {
+		if (_ballX - _lastRotatorLaunchX <= _screenWidth / 7.0f) {
 			return _lastRotatorClockwise;
 		}
 		return Math.random() > 0.5;
+	}
+	private float getRotatorSpeed(float x) {
+		if (_phaseClassifier.getPhase(_ballX) <= 1) {
+			return _rotatorSpeed;
+		}
+		if (x - _lastRotatorLaunchX <= _screenWidth / 7.0f) {
+			return _rotators.getLast().getSpeed();
+		}
+		return _rotatorSpeed * MathUtils.random(0.6f, 1.2f);
 	}
 	private boolean rotatorAlternating() {
 		if (_phaseClassifier.getPhase(_ballX) == 3) {

@@ -26,8 +26,8 @@ public class CounterWave extends Wave {
 		_enemyFrequency = screenWidth / 2.7f;
 		_accelerationManager = new AccelerationManager(screenWidth, screenHeight, 100 * screenWidth, screenWidth / 100.0f,
 				screenWidth / 40.0f, screenWidth / 2.5f, screenWidth / 1.8f, screenWidth / 2.0f, waveEquation);
-//		_enemies.add(new CircleEnemy(screenWidth / 2.0f, 0.0f,  _screenWidth / 100, (float) _screenWidth / 2.0f));
-//		_enemies.add(new CircleEnemy(3 * screenWidth / 4.0f, screenWidth / 2.0f,  _screenWidth / 100, (float) _screenWidth / 2.0f));
+		_enemies.add(new CircleEnemy(0.2f * screenWidth / 2.0f, 0.0f,  _screenWidth / 100, (float) _screenWidth / 2.0f));
+		_enemies.add(new CircleEnemy(3 * screenWidth / 4.0f, screenWidth / 2.0f,  _screenWidth / 100, (float) _screenWidth / 2.0f));
 	}
 	public void setWaveEquation(WaveEquation waveEquation) {
 		_waveEquation = waveEquation;

@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.Vector2;
 
 import entities.CounterWave;
 import entities.MainWave;
@@ -36,6 +37,7 @@ public class WaveBall extends ApplicationAdapter {
 	private float _waveAmplitude;
 	private float _counterWaveAmplitude;
 	private ScoreBoard _scoreBoard;
+	private Vector2 _tmpVector;
 	
 	private SpriteBatch _spriteBatch;
 	@Override
@@ -48,10 +50,10 @@ public class WaveBall extends ApplicationAdapter {
 		renderer.setProjectionMatrix(cam.combined);
 		_spriteBatch = new SpriteBatch();
 		_spriteBatch.setProjectionMatrix(cam.combined);
-		camSpeedNormal = (float) screenWidth / 4.8f;
+		camSpeedNormal = (float) screenWidth / 4.25f;
 		
-		_ballSize = screenWidth / 80.0f;
-		_waveAmplitude = screenWidth / 13.0f;
+		_ballSize = screenWidth / 65.0f;
+		_waveAmplitude = screenWidth / 12.0f;
 		_enemySize = screenWidth / 100.0f;
 		_counterWaveAmplitude = screenWidth / 18.0f;
 
@@ -64,6 +66,8 @@ public class WaveBall extends ApplicationAdapter {
 		inputHandler = new InputHandler(screenWidth, screenHeight, this);
 		Gdx.input.setInputProcessor(inputHandler);
 		_scoreBoard = new ScoreBoard(screenWidth, screenHeight);
+		
+		_tmpVector = new Vector2();
 	}
 
 	@Override
@@ -89,7 +93,6 @@ public class WaveBall extends ApplicationAdapter {
 		_scoreBoard.render(_spriteBatch, cameraX, wave.getScore());
 		_spriteBatch.end();
 		Gdx.gl.glDisable(GL20.GL_BLEND);
-		
 	}
 	
 	public void checkGameEnd() {
@@ -116,13 +119,19 @@ public class WaveBall extends ApplicationAdapter {
 		counterWave = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
 				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation());
 		counterWave.setWaveEquation(wave.getWaveEquation());
-		cam.translate(-cameraX, 0.0f);
+		_tmpVector.x = -cameraX;
+		_tmpVector.y = 0.0f;
+		_tmpVector.rotate(20);
+		cam.translate(_tmpVector.x, _tmpVector.y);
 		cameraX = 0.0f;
 	}
 	
 	private void manageCameraTranslation() {
-		if ((float)((int)wave.getBallX() - cameraX) / screenWidth >= 0.5f) {
-			cam.translate(wave.getBallX() - cameraX - screenWidth * 0.5f, 0.0f);
+		if ((float) ((int) wave.getBallX() - cameraX) / screenWidth >= 0.5f) {
+			_tmpVector.x = wave.getBallX() - cameraX - screenWidth * 0.5f;
+			_tmpVector.y = 0.0f;
+			_tmpVector.rotate(20);
+			cam.translate(_tmpVector.x, _tmpVector.y);
 			cameraX += wave.getBallX() - cameraX - screenWidth * 0.5f;
 		}
 	}

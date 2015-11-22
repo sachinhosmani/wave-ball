@@ -6,13 +6,13 @@ public class PhaseClassifier {
 		_screenWidth = screenWidth;
 	}
 	public int getPhase(float x) {
-		if (x < _screenWidth * 3.0f) {
+		if (x < _screenWidth * 4.0f) {
 			return 1;
 		}
-		if (x < _screenWidth * 6.0f) {
+		if (x < _screenWidth * 10.0f) {
 			return 2;
 		}
-		if (x < _screenWidth * 9.0f) {
+		if (x < _screenWidth * 17.0f) {
 			return 3;
 		}
 		return 4;

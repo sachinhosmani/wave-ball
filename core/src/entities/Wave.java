@@ -68,10 +68,25 @@ public class Wave {
 		}
 	}
 	public void drawLine(ShapeRenderer renderer, float x1, float y1, float x2, float y2, float width, Color color) {
+		_tmpVector.x = x1 - _screenWidth / 2.0f;
+		_tmpVector.y = y1 - _screenHeight / 2.0f;
+		_tmpVector.rotate(20);
+		x1 = _screenWidth / 2.0f + _tmpVector.x;
+		y1 = _screenHeight / 2.0f + _tmpVector.y;
+		_tmpVector.x = x2 - _screenWidth / 2.0f;
+		_tmpVector.y = y2 - _screenHeight / 2.0f;
+		_tmpVector.rotate(20);
+		x2 = _screenWidth / 2.0f + _tmpVector.x;
+		y2 = _screenHeight / 2.0f + _tmpVector.y;
 		renderer.setColor(color);
 		renderer.rectLine(x1, y1, x2, y2, width);
 	}
 	public void drawCircle(ShapeRenderer renderer, float x, float y, float r, Color c) {
+		_tmpVector.x = x - _screenWidth / 2.0f;
+		_tmpVector.y = y - _screenHeight / 2.0f;
+		_tmpVector.rotate(20);
+		x = _screenWidth / 2.0f + _tmpVector.x;
+		y = _screenHeight / 2.0f + _tmpVector.y;
 		renderer.setColor(c);
 		renderer.circle(x, y, r);
 	}
