@@ -13,6 +13,7 @@ public class WaveEquation {
 	public static float xMax;
 	public static float granularity;
 	public Stack<Float> rotatorPositions;
+	public Stack<Float> diamondPositions;
 	private PhaseClassifier phaseClassifier;
 	public static void initSize(float aXMax, float aGranularity) {
 		xMax = aXMax;
@@ -23,6 +24,7 @@ public class WaveEquation {
 			float yBase, float angleRate, float amplitudeRate) {
 		int size = (int) (xMax / granularity);
 		rotatorPositions = new Stack<Float>();
+		diamondPositions = new Stack<Float>();
 		float amplitude = baseAmplitude;
 		float y = 0.0f;
 		int i = 0;
@@ -43,7 +45,7 @@ public class WaveEquation {
 			y = waveEquation(angle, amplitude) + yBase;
 			amplitude += (amplitudeIncreasing ? amplitudeRate : -amplitudeRate);
 			angleDelta = angleDelta + (frequencyIncreasing ? angleRate : -angleRate);
-			if (amplitude > 1.7f * baseAmplitude) {
+			if (amplitude > 1.9f * baseAmplitude) {
 				amplitudeIncreasing = false;
 				lastAmplitudeChangeX = x;
 			}
@@ -51,7 +53,7 @@ public class WaveEquation {
 				frequencyIncreasing = false;
 				lastFrequencyChangeX = x;
 			}
-			if (amplitude < 0.7f * baseAmplitude) {
+			if (amplitude < 0.8f * baseAmplitude) {
 				amplitudeIncreasing = true;
 				lastAmplitudeChangeX = x;
 			}
@@ -91,12 +93,13 @@ public class WaveEquation {
 			controlPoints[i++] = new Vector2(x, y);
 			angle += angleDelta;
 		}
-//		float yDiff = (y - yBase) / ((xMax - x) / granularity);
-//		while (x < xMax) {
-//			y -= yDiff;
-//			controlPoints[i++] = new Vector2(x, y);
-//			x += granularity;
-//		}
+		for (i = 0; i < rotatorPositions.size() - 1; i++) {
+			float pos1 = rotatorPositions.get(i);
+			float pos2 = rotatorPositions.get(i + 1);
+			if (pos1 - pos2 > screenWidth / 5.0f && Math.random() > 0.5) {
+				diamondPositions.add((pos1 + pos2) / 2 + MathUtils.random(-0.3f, 0.3f) * (pos1 - pos2));
+			}
+		}
 		spline = new CatmullRomSpline<Vector2>(controlPoints, true);
 	}
 	private float waveEquation(float angle, float amplitude) {
@@ -106,7 +109,11 @@ public class WaveEquation {
 		while (x >= xMax) {
 			x -= xMax;
 		}
-		spline.valueAt(out, x / xMax);
+		try {
+			spline.valueAt(out, x / xMax);
+		} catch (Exception e) {
+			System.out.println(e);
+		}
 	}
 	public void getDerivative(float x, Vector2 out) {
 		while (x >= xMax) {
@@ -131,5 +138,14 @@ public class WaveEquation {
 	}
 	public void popRotatorPosition() {
 		rotatorPositions.pop();
+	}
+	public boolean allDiamondsDone() {
+		return diamondPositions.isEmpty();
+	}
+	public float peekNextDiamondPosition() {
+		return diamondPositions.peek();
+	}
+	public void popDiamondPosition() {
+		diamondPositions.pop();
 	}
 }

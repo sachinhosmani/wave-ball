@@ -1,10 +1,12 @@
 package entities;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector2;
 
+import utils.AssetLoader;
+import utils.Constants;
 import utils.TimeSnapshot;
 
 public class Rotator {
@@ -25,12 +27,13 @@ public class Rotator {
 	private Vector2 line11, line12;
 	private Vector2 line21, line22;
 	private boolean _clockwise;
-	private boolean _alternating;
 	private Vector2 _tmpVector;
+	private AssetLoader _assetLoader;
+	private boolean _varyingSpeed;
 	private Color color = new Color(1.0f, 0.0f, 0.0f, 0.8f);
 	public Rotator(float angle, float speed, float baseAngle, long pauseDuration,
 			float x, float y, float screenWidth, float screenHeight, float rotatorWidth,
-			boolean clockwise, boolean alternating) {
+			boolean clockwise, boolean varyingSpeed, AssetLoader assetLoader) {
 		_angle = angle;
 		_speed = speed;
 		_baseAngle = baseAngle;
@@ -40,7 +43,7 @@ public class Rotator {
 		_y = y;
 		_screenWidth = screenWidth;
 		_screenHeight = screenHeight;
-		float rotatorLength = _screenWidth / 25.0f;
+		float rotatorLength = _screenWidth / 30.0f;
 		point1 = new Vector2(-rotatorLength / 2.0f, -rotatorWidth / 2.0f);
 		point2 = new Vector2(rotatorLength / 2.0f, -rotatorWidth / 2.0f);
 		point3 = new Vector2(-rotatorLength / 2.0f, rotatorWidth / 2.0f);
@@ -50,24 +53,17 @@ public class Rotator {
 		line21 = new Vector2(_x + point3.x, _y + point3.y);
 		line22 = new Vector2(_x + point4.x, _y + point4.y);
 		_clockwise = clockwise;
-		_alternating = alternating;
+		_varyingSpeed = varyingSpeed;
 		_tmpVector = new Vector2();
+		_assetLoader = assetLoader;
 	}
 	public float getSpeed() {
 		return _speed;
 	}
 	public void update() {
 		long timeSince = _timeSnapshot.snapshot();
-		if (Math.abs(_angle - _baseAngle) < 0.01 || Math.abs(_angle - Math.PI - _baseAngle) < 0.01 ||
-				Math.abs(_angle + Math.PI - _baseAngle) < 0.01) {
-			_waitingTime += timeSince;
-			if (_waitingTime > _pauseDuration) {
-				_waitingTime = 0;
-				_angle += _speed * timeSince * (_clockwise ? -1 : 1);
-			}
-		} else {
-			_angle += _speed * timeSince * (_clockwise ? -1 : 1);
-		}
+		float speed = (float) (_varyingSpeed ? (0.7 + Math.abs(Math.sin(_angle)) * 0.3) * _speed : _speed); 
+		_angle += speed * timeSince * (_clockwise ? -1 : 1);
 		if (_angle > 2 * Math.PI) {
 			_angle -= 2 * Math.PI;
 		}
@@ -91,34 +87,55 @@ public class Rotator {
 		point3.rotateRad(-_angle);
 		point4.rotateRad(-_angle);
 	}
-	public void render(ShapeRenderer renderer) {
+	public void render(SpriteBatch renderer) {
 		point1.rotateRad(_angle);
 		point2.rotateRad(_angle);
 		point3.rotateRad(_angle);
 		point4.rotateRad(_angle);
 		
-		drawLine(renderer, _x + point1.x, _y + point1.y, _x + point2.x, _y + point2.y, _screenWidth / 100.0f);
-		drawLine(renderer, _x + point3.x, _y + point3.y, _x + point4.x, _y + point4.y, _screenWidth / 100.0f);
+		drawLine(renderer, _x + point1.x, _y + point1.y, _x + point2.x, _y + point2.y, _screenWidth / 100.0f, color);
+		drawLine(renderer, _x + point3.x, _y + point3.y, _x + point4.x, _y + point4.y, _screenWidth / 100.0f, color);
 		
 		point1.rotateRad(-_angle);
 		point2.rotateRad(-_angle);
 		point3.rotateRad(-_angle);
 		point4.rotateRad(-_angle);
 	}
-	public void drawLine(ShapeRenderer renderer, float x1, float y1, float x2, float y2, float width) {
+	public void drawLine(SpriteBatch renderer, float x1, float y1, float x2, float y2, float width, Color color) {
 		_tmpVector.x = x1 - _screenWidth / 2.0f;
 		_tmpVector.y = y1 - _screenHeight / 2.0f;
-		_tmpVector.rotate(20);
+		_tmpVector.rotate(Constants.rotation);
 		x1 = _screenWidth / 2.0f + _tmpVector.x;
 		y1 = _screenHeight / 2.0f + _tmpVector.y;
 		_tmpVector.x = x2 - _screenWidth / 2.0f;
 		_tmpVector.y = y2 - _screenHeight / 2.0f;
-		_tmpVector.rotate(20);
+		_tmpVector.rotate(Constants.rotation);
 		x2 = _screenWidth / 2.0f + _tmpVector.x;
 		y2 = _screenHeight / 2.0f + _tmpVector.y;
-		renderer.setColor(color);
-		renderer.rectLine(x1, y1, x2, y2, width);
+		
+		float midX = (x1 + x2) / 2.0f;
+		float midY = (y1 + y2) / 2.0f;
+		
+		_tmpVector.x = x1 - midX;
+		_tmpVector.y = y1 - midY;
+		float angle = _tmpVector.angle();
+		_tmpVector.rotate(-angle + 90);
+		x1 = _tmpVector.x + midX;
+		y1 = _tmpVector.y + midY;
+		
+		_tmpVector.x = x2 - midX;
+		_tmpVector.y = y2 - midY;
+		_tmpVector.rotate(-angle + 90);
+		x2 = _tmpVector.x + midX;
+		y2 = _tmpVector.y + midY;
+		
+		_assetLoader.rectangle1.setColor(color);
+		_assetLoader.rectangle1.setBounds(x2 - width / 2.0f, y2, width, Math.abs(y2 - y1));
+		_assetLoader.rectangle1.setOriginCenter();
+		_assetLoader.rectangle1.setRotation(angle - 90);
+		_assetLoader.rectangle1.draw(renderer);
 	}
+
 	public boolean checkCollision(Vector2 center, float radius) {
 		return Intersector.intersectSegmentCircle(line11, line12, center, radius) ||
 			 Intersector.intersectSegmentCircle(line21, line22, center, radius);

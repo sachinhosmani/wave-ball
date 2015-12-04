@@ -17,25 +17,46 @@ public class AccelerationManager {
 		_phaseClassifier = new PhaseClassifier(screenWidth);
 		int size = (int) (xMax / granularity);
 		Vector2[] controlPoints = new Vector2[size];
-		float speed = screenWidth / 2.0f;
+		float speed = screenWidth / 1.5f;
 		int i = 0;
 		float acceleration = baseAcceleration;
 		float lastAccelerationChangeX = 0.0f;
 		_baseAccelerationDelta = accelerationDeltaBase;
 		float accelerationDelta = getAccelerationDelta();
 		
+		boolean constantSpeed = false;
 		float x = 0.0f;
-		for (; _phaseClassifier.getPhase(x) <= 2; x += granularity) {
-			controlPoints[i++] = new Vector2(x, speed);
-		}
-		
-		for (; i < size; x += granularity) {
+		for (; i < size && _phaseClassifier.getPhase(x) <= 2; x += granularity) {
 			if (x - lastAccelerationChangeX > accelerationDelta) {
 				acceleration = -acceleration;
 				lastAccelerationChangeX = x;
 				accelerationDelta = getAccelerationDelta();
 			}
+			speed += x / xMax * acceleration / 5.0f;
+			speed = Math.max(minSpeed, speed);
+			speed = Math.min(speed, maxSpeed / 1.5f);
+			controlPoints[i++] = new Vector2(x, speed);
+		}
+		
+		for (; i < size; x += granularity) {
+			if (x - lastAccelerationChangeX > accelerationDelta) {
+				if (constantSpeed) {
+					// speeding up
+					if (Math.random() > 0.5) {
+						acceleration = baseAcceleration;
+					}
+				} else {
+					// slowing down
+					acceleration = -acceleration;
+				}
+				lastAccelerationChangeX = x;
+				accelerationDelta = getAccelerationDelta();
+			}
 			speed += x / xMax * acceleration;
+			if (speed < minSpeed) {
+				constantSpeed = true;
+				acceleration = 0.0f;
+			}
 			speed = Math.max(minSpeed, speed);
 			speed = Math.min(speed, maxSpeed);
 			controlPoints[i++] = new Vector2(x, speed);
@@ -63,6 +84,6 @@ public class AccelerationManager {
 		return _tmpVector.y;
 	}
 	public float getAccelerationDelta() {
-		return _baseAccelerationDelta * MathUtils.random(0.3f, 1.5f);
+		return _baseAccelerationDelta * MathUtils.random(0.7f, 1.5f);
 	}
 }
