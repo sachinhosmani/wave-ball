@@ -9,21 +9,26 @@ import com.badlogic.gdx.math.Vector2;
 public class WaveEquation {
 	private CatmullRomSpline<Vector2> spline;
 	private static Vector2[] controlPoints;
-	private static Vector2[] frequencyPoints;
 	public static float xMax;
 	public static float granularity;
 	public Stack<Float> rotatorPositions;
+	public Stack<Boolean> rotatorMultiple;
 	public Stack<Float> diamondPositions;
 	private PhaseClassifier phaseClassifier;
 	public static void initSize(float aXMax, float aGranularity) {
 		xMax = aXMax;
 		granularity = aGranularity;
-		controlPoints = new Vector2[(int) (xMax / granularity)];
+		int size = (int) (xMax / granularity);
+		controlPoints = new Vector2[size];
+		for (int i = 0; i < size; i++) {
+			controlPoints[i] = new Vector2();
+		}
 	}
 	public WaveEquation(float baseAmplitude, float baseAngleDelta, float screenWidth,
 			float yBase, float angleRate, float amplitudeRate) {
 		int size = (int) (xMax / granularity);
 		rotatorPositions = new Stack<Float>();
+		rotatorMultiple = new Stack<Boolean>();
 		diamondPositions = new Stack<Float>();
 		float amplitude = baseAmplitude;
 		float y = 0.0f;
@@ -36,11 +41,13 @@ public class WaveEquation {
 		float angleDelta = baseAngleDelta;
 		float amplitudeChangeWindow = findAmplitudeChangeWindow(screenWidth);
 		float frequencyChangeWindow = findFrequencyChangeWindow(screenWidth);
-		float rotatorFrequency = screenWidth / 2.0f;
+		float rotatorFrequency = screenWidth / 1.5f;
 		phaseClassifier = new PhaseClassifier(screenWidth);
 		float lastRotatorX = screenWidth;
 		float x;
 		boolean first = false, second = false;
+		float lastAngle = 0.0f;
+		float maxAngleDiff = 0.56f;
 		for (x = 0.0f; i < size; x += granularity) {
 			y = waveEquation(angle, amplitude) + yBase;
 			amplitude += (amplitudeIncreasing ? amplitudeRate : -amplitudeRate);
@@ -72,26 +79,41 @@ public class WaveEquation {
 				frequencyChangeWindow = findFrequencyChangeWindow(screenWidth);
 			}
 			if (!first && second && Math.abs(x - lastRotatorX - screenWidth / 7.0f) < screenWidth / 50.0f &&
-					phaseClassifier.getPhase(x) >= 3 && angleDelta < 0.6 * baseAngleDelta) {
+					phaseClassifier.getPhase(x) >= 3 && angleDelta < 0.6 * baseAngleDelta &&
+					Math.abs(lastAngle - angle) < maxAngleDiff) {
 				rotatorPositions.add(0, x);
+				rotatorMultiple.add(0, true);
 				lastRotatorX = x;
 				first = second = false;
+				System.out.println(Math.abs(lastAngle - angle) + " " + maxAngleDiff);
+				lastAngle = angle;
 			}
 			if (first && !second && Math.abs(x - lastRotatorX - screenWidth / 7.0f) < screenWidth / 50.0f &&
-					phaseClassifier.getPhase(x) >= 2 && angleDelta < 0.6 * baseAngleDelta) {
+					phaseClassifier.getPhase(x) >= 2 && angleDelta < 0.6 * baseAngleDelta &&
+					Math.abs(lastAngle - angle) < maxAngleDiff) {
 				rotatorPositions.add(0, x);
+				rotatorMultiple.remove(0);
+				rotatorMultiple.add(0, true);
+				rotatorMultiple.add(0, true);
 				lastRotatorX = x;
 				second = true;
 				first = false;
+				System.out.println(Math.abs(lastAngle - angle) + " " + maxAngleDiff);
+				lastAngle = angle;
 			}
 			if (x - lastRotatorX > MathUtils.random(0.9f, 1.5f) * rotatorFrequency) {
 				rotatorPositions.add(0, x);
+				rotatorMultiple.add(0, false);
 				lastRotatorX = x;
 				first = true;
 				second = false;
+				lastAngle = angle;
 			}
-			controlPoints[i++] = new Vector2(x, y);
+			controlPoints[i].x = x;
+			controlPoints[i].y = y;
+			i++;
 			angle += angleDelta;
+			maxAngleDiff += granularity / size * 0.3f;
 		}
 		for (i = 0; i < rotatorPositions.size() - 1; i++) {
 			float pos1 = rotatorPositions.get(i);
@@ -138,6 +160,12 @@ public class WaveEquation {
 	}
 	public void popRotatorPosition() {
 		rotatorPositions.pop();
+	}
+	public void popRotatorMultiple() {
+		rotatorMultiple.pop();
+	}
+	public boolean peekRotatorMultiple() {
+		return rotatorMultiple.peek();
 	}
 	public boolean allDiamondsDone() {
 		return diamondPositions.isEmpty();

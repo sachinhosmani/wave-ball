@@ -8,7 +8,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.sun.corba.se.spi.activation._ActivatorStub;
 
 import utils.Acceleration;
 import utils.AssetLoader;
@@ -38,13 +37,16 @@ public class MainWave extends Wave {
 	private static Color _diamondColor = new Color(1.0f, 0.7f, 0.0f, 0.9f);
 	private float _baseAngleDelta;
 	private int _score;
+	private int _points;
 	private ArrayList<Float> _rotatorPositions;
 	private float _rotatorSpeed;
 	public ArrayList<CircleEntity> _diamonds;
 	private float _diamondRadius;
-	private float _diamondFrequency;
-	
-	private float lastX = 0.0f;
+	private float _lastAngle;
+	private float _lastSpeed;
+	private boolean _lastVaryingSpeed;
+	private boolean _lastMultiple = false;
+
 	public float getBallX() {
 		return _ballX;
 	}
@@ -62,19 +64,19 @@ public class MainWave extends Wave {
 				screenHeight / 2.0f, _baseAngleDelta / 2500.0f, amplitude / 2000.0f);
 		_ballX = ballX;
 		_radius = radius;
-		_acceleration = new Acceleration(speed / 5.0f, speed / 2.0f, speed);
+		_acceleration = new Acceleration(speed / 50.0f, speed / 300.0f, speed);
 		ballShape = new Circle(0.0f, 0.0f, _radius);
 		_startX = 0.0f;
-		camSpeedTrailing = (float) screenWidth / 5.0f;
+		camSpeedTrailing = (float) screenWidth / 6.0f;
 		rotatorWidth = _screenWidth / 11.95f;
 		_phaseClassifier = new PhaseClassifier(screenWidth);
 		_ballMaxSpeed = speed;
-		_ballMaxBoostedSpeed = speed * 1.35f;
+		_ballMaxBoostedSpeed = speed * 1.5f;
 		_score = 0;
+		_points = 0;
 		_rotatorPositions = new ArrayList<Float>();
 		_rotatorSpeed = (float) Math.PI / 1300.0f;
 		_diamonds = new ArrayList<CircleEntity>();
-		_diamondFrequency = _screenWidth;
 		_diamondRadius = _screenWidth / 70.0f;
 	}
 
@@ -90,7 +92,8 @@ public class MainWave extends Wave {
 		if (!_waveEquation.allRotatorsDone() && (cameraX + _screenWidth) > _waveEquation.peekNextRotatorPosition()) {
 			float xPos = _waveEquation.peekNextRotatorPosition();
 			_waveEquation.popRotatorPosition();
-			addRotator(xPos);
+			addRotator(xPos, _waveEquation.peekRotatorMultiple());
+			_waveEquation.popRotatorMultiple();
 			_rotatorPositions.add(xPos);
 		}
 		_acceleration.update(timeElapsed);
@@ -108,7 +111,7 @@ public class MainWave extends Wave {
 		rotatorWidth = Math.max(_screenWidth / 14.0f, rotatorWidth - _screenWidth / 220000.0f);
 		camSpeedTrailing = Math.min(camSpeedTrailing + _screenWidth / 40000.0f, 1.5f * _screenWidth / 5.0f);
 		updateScore();
-		_ballMaxSpeed = Math.min(_ballMaxSpeed + _screenWidth / 100000.0f, _screenWidth / 4.0f);
+//		_ballMaxSpeed = Math.min(_ballMaxSpeed + _screenWidth / 100000.0f, _screenWidth / 4.0f);
 		_ballMaxBoostedSpeed = _ballMaxSpeed * 1.3f;
 		
 		_rotatorSpeed = Math.min(_rotatorSpeed + (float) Math.PI / 1300.0f / 80000.0f, (float) Math.PI / 1100.0f);
@@ -147,8 +150,8 @@ public class MainWave extends Wave {
 		}
 	}
 	
-	public void incrementScore(int increment) {
-		_score += increment;
+	public void incrementPoints(int increment) {
+		_points += increment;
 	}
 	protected void increasePhase(float delta) {
 		_waveEquation.getDerivative(_ballX, _tmpVector);
@@ -185,27 +188,25 @@ public class MainWave extends Wave {
 	public void stop() {
 		moving = false;
 	}
-	private void addRotator(float x) {
+	private void addRotator(float x, boolean multiple) {
+		if (multiple && _lastMultiple) {
+			System.out.println(_lastAngle - (float) Math.atan2(_tmpVector.y, _tmpVector.x));
+		}
 		_waveEquation.get(x, _tmpVector);
 		boolean clockwise = rotatorClockwise(x);
 		_lastRotatorClockwise = clockwise;
-		boolean alternating = rotatorVaryingSpeed();
+		boolean alternating = rotatorVaryingSpeed(multiple);
+		_lastVaryingSpeed = alternating;
 		float y = _tmpVector.y;
 		_waveEquation.getDerivative(x, _tmpVector);
-		float angle = (float) Math.atan2(_tmpVector.y, _tmpVector.x);
-		float rotatorSpeed = getRotatorSpeed(x);
+		float angle = multiple ? _lastAngle : (float) Math.atan2(_tmpVector.y, _tmpVector.x);
+		_lastAngle = angle;
+		float rotatorSpeed = getRotatorSpeed(x, multiple);
+		_lastSpeed = rotatorSpeed;
 		_rotators.add(new Rotator(angle, rotatorSpeed, normalizeAngle(0.0f + (float) Math.PI / 2.0f),
-				0, x, y, _screenWidth, _screenHeight, rotatorWidth, clockwise, alternating, _assetLoader));
+				0, x, y, _screenWidth, _screenHeight, rotatorWidth, clockwise, alternating, rotatorEasy(multiple), _assetLoader));
 		_lastRotatorLaunchX = x;
-	}
-	private boolean checkIfRotatorAddable(float x, float y) {
-		_waveEquation.get(x - _screenWidth / 10.0f, _tmpVector);
-		float oldY = _tmpVector.y;
-		_waveEquation.getDerivative(x, _tmpVector);
-		if (_tmpVector.len() < 1.3 && Math.abs(oldY - y) > _screenHeight / 100.0f) {
-			return false;
-		}
-		return true;
+		_lastMultiple = multiple;
 	}
 	private void tryRemoveRotator(float cameraX) {
 		if (_rotators.size() == 0) {
@@ -216,9 +217,6 @@ public class MainWave extends Wave {
 			_rotators.remove(0);
 		}
 	}
-	private float getRotatorFrequency() {
-		return MathUtils.random(0.7f * _screenWidth, 1.1f * _screenWidth);
-	}
 	private boolean rotatorClockwise(float x) {
 		if (_phaseClassifier.getPhase(_ballX) == 1) {
 			return true;
@@ -228,18 +226,31 @@ public class MainWave extends Wave {
 		}
 		return Math.random() > 0.5;
 	}
-	private float getRotatorSpeed(float x) {
+	private float getRotatorSpeed(float x, boolean multiple) {
 		if (_phaseClassifier.getPhase(_ballX) <= 1) {
 			return _rotatorSpeed;
 		}
-		if (x - _lastRotatorLaunchX <= _screenWidth / 6.0f) {
-			return _rotators.getLast().getSpeed();
+		if (multiple && _lastMultiple) {
+			return _lastSpeed;
 		}
-		return _rotatorSpeed * MathUtils.random(0.8f, 1.3f);
+		return _rotatorSpeed * MathUtils.random(0.8f, 1.1f);
 	}
-	private boolean rotatorVaryingSpeed() {
-		if (_phaseClassifier.getPhase(_ballX) >= 1) {
+	private boolean rotatorVaryingSpeed(boolean multiple) {
+		if (multiple) {
+			return false;
+		}
+		if (_phaseClassifier.getPhase(_ballX) >= 2) {
 			return Math.random() > 0.7;
+		}
+		return false;
+	}
+	private boolean rotatorEasy(boolean multiple) {
+		if (multiple) {
+			return false;
+		}
+		if (_phaseClassifier.getPhase(_ballX) <= 1) {
+			System.out.println("easy");
+			return true;
 		}
 		return false;
 	}

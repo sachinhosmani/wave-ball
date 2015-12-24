@@ -10,13 +10,24 @@ public class AccelerationManager {
 	private Vector2 _tmpVector = new Vector2();
 	private PhaseClassifier _phaseClassifier;
 	private float _baseAccelerationDelta;
-	public AccelerationManager(float screenWidth, float screenHeight,  float xMax, float granularity,
+	private static Vector2[] controlPoints;
+	public static float xMax;
+	public static float granularity;
+	public static void initSize(float aXMax, float aGranularity) {
+		xMax = aXMax;
+		granularity = aGranularity;
+		int size = (int) (xMax / granularity);
+		controlPoints = new Vector2[size];
+		for (int i = 0; i < size; i++) {
+			controlPoints[i] = new Vector2();
+		}
+	}
+	public AccelerationManager(float screenWidth, float screenHeight,
 			float baseAcceleration, float minSpeed, float maxSpeed, float accelerationDeltaBase,
 			WaveEquation waveEquation) {
 		_xMax = xMax;
 		_phaseClassifier = new PhaseClassifier(screenWidth);
 		int size = (int) (xMax / granularity);
-		Vector2[] controlPoints = new Vector2[size];
 		float speed = screenWidth / 1.5f;
 		int i = 0;
 		float acceleration = baseAcceleration;
@@ -35,7 +46,9 @@ public class AccelerationManager {
 			speed += x / xMax * acceleration / 5.0f;
 			speed = Math.max(minSpeed, speed);
 			speed = Math.min(speed, maxSpeed / 1.5f);
-			controlPoints[i++] = new Vector2(x, speed);
+			controlPoints[i].x = x;
+			controlPoints[i].y = speed;
+			i++;
 		}
 		
 		for (; i < size; x += granularity) {
@@ -57,9 +70,14 @@ public class AccelerationManager {
 				constantSpeed = true;
 				acceleration = 0.0f;
 			}
+			if (speed > maxSpeed) {
+				acceleration = -baseAcceleration;
+			}
 			speed = Math.max(minSpeed, speed);
 			speed = Math.min(speed, maxSpeed);
-			controlPoints[i++] = new Vector2(x, speed);
+			controlPoints[i].x = x;
+			controlPoints[i].y = speed;
+			i++;
 		}
 		
 //		for (; i < size; x += granularity) {

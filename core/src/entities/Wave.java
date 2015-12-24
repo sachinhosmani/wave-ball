@@ -1,8 +1,8 @@
 package entities;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 
 import utils.AssetLoader;
@@ -18,11 +18,13 @@ public class Wave {
 	protected TimeSnapshot _timeSnapshot = new TimeSnapshot();
 	protected float _screenWidth;
 	protected float _screenHeight;
-	protected Color _color;
 	protected WaveEquation _waveEquation;
 	protected Float _startX = null;
 	protected Vector2 _tmpVector = new Vector2();
+	protected Vector2 _tmpVector1 = new Vector2();
 	protected AssetLoader _assetLoader;
+	private float vertices[] = new float[5 * 4];
+	private float _color;
 	
 	public Wave(float phase, float amplitude, float speed, float screenWidth, float screenHeight, Color color, AssetLoader assetLoader) {
 		_phase = phase;
@@ -30,7 +32,7 @@ public class Wave {
 		_speed = speed;
 		_screenWidth = screenWidth;
 		_screenHeight = screenHeight;
-		_color = color;
+		_color = color.toFloatBits();
 		_assetLoader = assetLoader;
 	}
 	public Float getStartX() {
@@ -72,39 +74,110 @@ public class Wave {
 			prevX = x;
 		}
 	}
+
 	public void drawLine(SpriteBatch renderer, float x1, float y1, float x2, float y2, float width, Color color) {
-		_tmpVector.x = x1 - _screenWidth / 2.0f;
-		_tmpVector.y = y1 - _screenHeight / 2.0f;
-		_tmpVector.rotate(Constants.rotation);
-		x1 = _screenWidth / 2.0f + _tmpVector.x;
-		y1 = _screenHeight / 2.0f + _tmpVector.y;
-		_tmpVector.x = x2 - _screenWidth / 2.0f;
-		_tmpVector.y = y2 - _screenHeight / 2.0f;
-		_tmpVector.rotate(Constants.rotation);
-		x2 = _screenWidth / 2.0f + _tmpVector.x;
-		y2 = _screenHeight / 2.0f + _tmpVector.y;
+		if (y1 > y2) {
+			float tmp = y1;
+			y1 = y2;
+			y2 = tmp;
+			tmp = x1;
+			x1 = x2;
+			x2 = tmp;
+		}
+		
+		_tmpVector1.x = x1 - _screenWidth / 2.0f;
+		_tmpVector1.y = y1 - _screenHeight / 2.0f;
+		_tmpVector1.rotate(Constants.rotation);
+		x1 = _screenWidth / 2.0f + _tmpVector1.x;
+		y1 = _screenHeight / 2.0f + _tmpVector1.y;
+		_tmpVector1.x = x2 - _screenWidth / 2.0f;
+		_tmpVector1.y = y2 - _screenHeight / 2.0f;
+		_tmpVector1.rotate(Constants.rotation);
+		x2 = _screenWidth / 2.0f + _tmpVector1.x;
+		y2 = _screenHeight / 2.0f + _tmpVector1.y;
 		
 		float midX = (x1 + x2) / 2.0f;
 		float midY = (y1 + y2) / 2.0f;
 		
-		_tmpVector.x = x1 - midX;
-		_tmpVector.y = y1 - midY;
-		float angle = _tmpVector.angle();
-		_tmpVector.rotate(-angle + 90);
-		x1 = _tmpVector.x + midX;
-		y1 = _tmpVector.y + midY;
+		_tmpVector1.x = x1 - midX;
+		_tmpVector1.y = y1 - midY;
+		float angle = _tmpVector1.angle();
+		_tmpVector1.rotate(-angle - 90);
+		x1 = _tmpVector1.x + midX;
+		y1 = _tmpVector1.y + midY;
 		
-		_tmpVector.x = x2 - midX;
-		_tmpVector.y = y2 - midY;
-		_tmpVector.rotate(-angle + 90);
-		x2 = _tmpVector.x + midX;
-		y2 = _tmpVector.y + midY;
-		
+		_tmpVector1.x = x2 - midX;
+		_tmpVector1.y = y2 - midY;
+		angle = _tmpVector1.angle();
+		_tmpVector1.rotate(-angle + 90);
+		x2 = _tmpVector1.x + midX;
+		y2 = _tmpVector1.y + midY;
 		_assetLoader.rectangle1.setColor(color);
-		_assetLoader.rectangle1.setBounds(x2 - width / 2.0f, y2, width, Math.abs(y2 - y1));
+		_assetLoader.rectangle1.setBounds(x1 - width / 2.0f, y1, width, Math.abs(y2 - y1));
 		_assetLoader.rectangle1.setOriginCenter();
 		_assetLoader.rectangle1.setRotation(angle - 90);
 		_assetLoader.rectangle1.draw(renderer);
+
+//		float xa = x1 - width / 2.0f;
+//		float ya = y1;
+//		float xb = x1 + width / 2.0f;
+//		float yb = y1;
+//		float xc = x1 + width / 2.0f;
+//		float yc = y2;
+//		float xd = x1 - width / 2.0f;
+//		float yd = y2;
+//		
+//		_tmpVector.x = xa - midX;
+//		_tmpVector.y = ya - midY;
+//		_tmpVector.rotate(angle - 90);
+//		xa = midX + _tmpVector.x;
+//		ya = midY + _tmpVector.y;
+//		_tmpVector.x = xb - midX;
+//		_tmpVector.y = yb - midY;
+//		_tmpVector.rotate(angle - 90);
+//		xb = midX + _tmpVector.x;
+//		yb = midY + _tmpVector.y;
+//		_tmpVector.x = xc - midX;
+//		_tmpVector.y = yc - midY;
+//		_tmpVector.rotate(angle - 90);
+//		xc = midX + _tmpVector.x;
+//		yc = midY + _tmpVector.y;
+//		_tmpVector.x = xd - midX;
+//		_tmpVector.y = yd - midY;
+//		_tmpVector.rotate(angle - 90);
+//		xd = midX + _tmpVector.x;
+//		yd = midY + _tmpVector.y;
+		
+//		System.out.print("(" + xa + "," + ya + ") ");
+//		System.out.print("(" + xb + "," + yb + ") ");
+//		System.out.print("(" + xc + "," + yc + ") ");
+//		System.out.println("(" + xd + "," + yd + ") ");
+//		
+//	  vertices[Batch.X1] = xa;
+//	  vertices[Batch.Y1] = ya;
+//	  vertices[Batch.C1] = _color;
+//	  vertices[Batch.U1] = 0f;
+//	  vertices[Batch.V1] = 0f;
+//	 
+//	  vertices[Batch.X2] = xb;
+//	  vertices[Batch.Y2] = yb;
+//	  vertices[Batch.C2] = _color;
+//	  vertices[Batch.U2] = 1f;
+//	  vertices[Batch.V2] = 0f;
+//	 
+//	  vertices[Batch.X3] = xc;
+//	  vertices[Batch.Y3] = yc;
+//	  vertices[Batch.C3] = _color;
+//	  vertices[Batch.U3] = 1f;
+//	  vertices[Batch.V3] = 1f;
+//	 
+//	  vertices[Batch.X4] = xd;
+//	  vertices[Batch.Y4] = yd;
+//	  vertices[Batch.C4] = _color;
+//	  vertices[Batch.U4] = 0f;
+//	  vertices[Batch.V4] = 1f;
+//	 
+//	  renderer.draw(_assetLoader.rectangle1.getTexture(), vertices, 0, vertices.length);
 	}
 	public void drawCircle(SpriteBatch renderer, float x, float y, float r, Color c) {
 		_tmpVector.x = x - _screenWidth / 2.0f;

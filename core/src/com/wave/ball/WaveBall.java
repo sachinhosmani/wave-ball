@@ -18,11 +18,13 @@ import entities.Rotator;
 import entities.ScoreBoard;
 import menus.Button;
 import menus.MainMenu;
+import utils.AccelerationManager;
 import utils.AssetLoader;
 import utils.CircleEntity;
 import utils.CircleEntity.Type;
 import utils.Constants;
 import utils.InputHandler;
+import utils.PreferenceManager;
 import utils.WaveEquation;
 
 public class WaveBall extends ApplicationAdapter {
@@ -48,12 +50,13 @@ public class WaveBall extends ApplicationAdapter {
 	
 	private final float _ballPositionFraction = 0.4f;
 	private SpriteBatch _spriteBatch;
-	
+	boolean collided = false;
 	private enum GameState {
 		PLAYING, MENU
 	};
 	private GameState _gameState = GameState.PLAYING;
 	private MainMenu _mainMenu;
+	private PreferenceManager _prefManager;
 	@Override
 	public void create() {
 		screenWidth = Gdx.graphics.getWidth();
@@ -75,6 +78,7 @@ public class WaveBall extends ApplicationAdapter {
 		_assetLoader.load(screenWidth, screenHeight);
 		
 		WaveEquation.initSize(screenWidth * 100, screenWidth / 1000.0f);
+		AccelerationManager.initSize(screenWidth * 100, screenWidth / 100.0f);
 		wave = new MainWave(0.0f, _waveAmplitude, 2, camSpeedNormal, _ballSize, screenWidth * _ballPositionFraction,
 				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _assetLoader);
 		counterWave = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
@@ -85,11 +89,15 @@ public class WaveBall extends ApplicationAdapter {
 		_scoreBoard = new ScoreBoard(screenWidth, screenHeight, _assetLoader);
 		
 		_tmpVector = new Vector2();
+		_prefManager = new PreferenceManager();
 	}
 
 	@Override
 	public void render() {
 		logger.log();
+		if (collided) {
+			return;
+		}
 		if (!_assetsLoaded) {
 			if (_assetLoader.update()) {
 				_assetsLoaded = true;
@@ -145,7 +153,7 @@ public class WaveBall extends ApplicationAdapter {
 			}
 			if (enemy._type == Type.DIAMOND && Intersector.overlaps(enemy.shape, wave.ballShape)) {
 				found = true;
-				wave.incrementScore(1);
+				wave.incrementPoints(1);
 			}
 			if (!found) {
 				collidingDiamondIndex++;
@@ -155,8 +163,9 @@ public class WaveBall extends ApplicationAdapter {
 			counterWave._circles.remove(collidingDiamondIndex);
 		}
 		for (Rotator rotator: wave._rotators) {
-			if (rotator.checkCollision(wave.ballVector, wave.getRadius())) {
+			if (rotator.checkCollision(wave.ballShape)) {
 				restartGame();
+//				collided = true;
 				return;
 			}
 		}
@@ -165,7 +174,7 @@ public class WaveBall extends ApplicationAdapter {
 		for (CircleEntity diamond: wave._diamonds) {
 			if (Intersector.overlaps(diamond.shape, wave.ballShape)) {
 				found = true;
-				wave.incrementScore(1);
+				wave.incrementPoints(1);
 				break;
 			}
 			collidingDiamondIndex++;
@@ -186,6 +195,12 @@ public class WaveBall extends ApplicationAdapter {
 		_tmpVector.rotate(Constants.rotation);
 		cam.translate(_tmpVector.x, _tmpVector.y);
 		cameraX = 0.0f;
+	}
+	
+	private void storeScores() {
+		if (_prefManager.getMaxScore() < wave.getScore()) {
+			_prefManager.setMaxScore(wave.getScore());
+		}
 	}
 	
 	private void manageCameraTranslation() {
@@ -226,4 +241,64 @@ public class WaveBall extends ApplicationAdapter {
 		button.font.setColor(0.0f, 0.0f, 0.0f, 0.9f);
 		button.font.draw(spriteBatch, button.label, button.x, button.y);
 	}
+//	
+//    SpriteBatch batch;
+//    Texture img;
+//    Viewport vp;
+//   
+//    @Override
+//    public void create () {
+//            vp = new ExtendViewport(5, 5);
+//            batch = new SpriteBatch();
+//            img = new Texture("data/badlogic.jpg");
+//            Gdx.gl.glClearColor(1, 0, 0, 1);
+//    }
+//   
+//    @Override
+//    public void resize (int width, int height) {
+//            vp.update(width, height);
+//            batch.setProjectionMatrix(vp.getCamera().combined);
+//    }
+//
+//    float vertices[] = new float[5 * 4];
+//    float white = Color.WHITE.toFloatBits();
+//    @Override
+//    public void render () {
+//            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+//            batch.begin();
+//            float px = -2.5f, py = -2.5f;
+//            for (float s = 0; s < 1f; s+=0.01f) {
+//                    final float x = (s - 0.5f) * 5f;
+//                    final float y = 2.5f * MathUtils.sin(s * MathUtils.PI2);
+//                    vertices[Batch.X1] = px;
+//                    vertices[Batch.Y1] = py - 0.1f;
+//                    vertices[Batch.C1] = white;
+//                    vertices[Batch.U1] = 0f;
+//                    vertices[Batch.V1] = 1f;
+//                   
+//                    vertices[Batch.X2] = px;
+//                    vertices[Batch.Y2] = py + 0.1f;
+//                    vertices[Batch.C2] = white;
+//                    vertices[Batch.U2] = 0f;
+//                    vertices[Batch.V2] = 0f;
+//                   
+//                    vertices[Batch.X3] = x;
+//                    vertices[Batch.Y3] = y + 0.1f;
+//                    vertices[Batch.C3] = white;
+//                    vertices[Batch.U3] = 1f;
+//                    vertices[Batch.V3] = 1f;                       
+//                   
+//                    vertices[Batch.X4] = x;
+//                    vertices[Batch.Y4] = y - 0.1f;
+//                    vertices[Batch.C4] = white;
+//                    vertices[Batch.U4] = 1f;
+//                    vertices[Batch.V4] = 0f;
+//                   
+//                    batch.draw(img, vertices, 0, vertices.length);
+//                    px = x;
+//                    py = y;
+//            }
+//            batch.end();
+//    }
+//    
 }

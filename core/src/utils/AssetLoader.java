@@ -62,7 +62,7 @@ public class AssetLoader {
 	
 	public void load(float screenWidth, float screenHeight) {
 		manager.load("spritesheet.txt", TextureAtlas.class);
-		if (screenWidth <= 500) {
+		if (screenWidth <= 0) {
 			manager.load("500/spritesheet.txt", TextureAtlas.class);
 			manager.load("500/background.jpg", Texture.class);
 		} else if (screenWidth <= 1000) {
@@ -98,7 +98,7 @@ public class AssetLoader {
 	public void assignAssets() {
 		TextureAtlas spriteSheet = manager.get("spritesheet.txt", TextureAtlas.class);
 		TextureAtlas screenDependentSpriteSheet;
-		if (screenWidth <= 500) {
+		if (screenWidth <= 0) {
 			screenDependentSpriteSheet = manager.get("500/spritesheet.txt", TextureAtlas.class);
 			hollow1 = screenDependentSpriteSheet.createSprite("hollow1");
 			hollow2 = screenDependentSpriteSheet.createSprite("hollow2");

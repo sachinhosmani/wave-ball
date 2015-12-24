@@ -29,7 +29,7 @@ public class CounterWave extends Wave {
 		_radius = radius;
 		_enemyFrequency = screenWidth / 2.8f;
 		_enemyRadius = _screenWidth / 80.0f;
-		_accelerationManager = new AccelerationManager(screenWidth, screenHeight, 100 * screenWidth, screenWidth / 100.0f,
+		_accelerationManager = new AccelerationManager(screenWidth, screenHeight,
 				screenWidth / 40.0f, screenWidth / 2.2f, screenWidth / 1.6f, screenWidth / 2.0f, waveEquation);
 	}
 	public void setWaveEquation(WaveEquation waveEquation) {
@@ -56,7 +56,7 @@ public class CounterWave extends Wave {
 	}
 	private void tryAddEnemyOrDiamond(float cameraX) {
 		if ((cameraX > _screenWidth * 0.7f) && (_circles.size() == 0 || _circles.get(_circles.size() - 1)._x - cameraX > _enemyFrequency)) {
-			if (Math.random() < 0.9) {
+			if (Math.random() < 0.9 || _circles.size() < 2) {
 				_circles.add(new CircleEntity(cameraX, 0.0f,  _enemyRadius, (float) _screenWidth / 2.0f));
 			} else {
 				_circles.add(new CircleEntity(cameraX, 0.0f,  _enemyRadius, (float) _screenWidth / 2.0f, CircleEntity.Type.DIAMOND));
