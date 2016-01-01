@@ -56,6 +56,7 @@ public class AccelerationManager {
 				if (constantSpeed) {
 					// speeding up
 					if (Math.random() > 0.5) {
+						constantSpeed = false;
 						acceleration = baseAcceleration;
 					}
 				} else {
@@ -74,7 +75,7 @@ public class AccelerationManager {
 				acceleration = -baseAcceleration;
 			}
 			speed = Math.max(minSpeed, speed);
-			speed = Math.min(speed, maxSpeed);
+			speed = Math.min(speed, maxSpeed / 1.5f);
 			controlPoints[i].x = x;
 			controlPoints[i].y = speed;
 			i++;

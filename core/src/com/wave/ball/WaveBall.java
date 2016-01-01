@@ -12,16 +12,16 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector2;
 
+import entities.CircleEntity;
 import entities.CounterWave;
 import entities.MainWave;
 import entities.Rotator;
 import entities.ScoreBoard;
+import entities.CircleEntity.Type;
 import menus.Button;
 import menus.MainMenu;
 import utils.AccelerationManager;
 import utils.AssetLoader;
-import utils.CircleEntity;
-import utils.CircleEntity.Type;
 import utils.Constants;
 import utils.InputHandler;
 import utils.PreferenceManager;
@@ -37,6 +37,7 @@ public class WaveBall extends ApplicationAdapter {
 	private InputHandler inputHandler;
 	private float camSpeedNormal;
 	private float cameraX = 0.0f;
+	private float cameraY = 0.0f;
 	FPSLogger logger = new FPSLogger();
 	
 	private float _ballSize;
@@ -59,8 +60,8 @@ public class WaveBall extends ApplicationAdapter {
 	private PreferenceManager _prefManager;
 	@Override
 	public void create() {
-		screenWidth = Gdx.graphics.getWidth();
-		screenHeight = Gdx.graphics.getHeight();
+		screenWidth = Gdx.graphics.getWidth() * 1.1f;
+		screenHeight = Gdx.graphics.getHeight() * 1.1f;
 		cam = new OrthographicCamera();
 		cam.setToOrtho(false, screenWidth, screenHeight);
 		renderer = new ShapeRenderer();
@@ -109,7 +110,7 @@ public class WaveBall extends ApplicationAdapter {
 		}
 		if (_gameState == GameState.PLAYING) {
 			Gdx.gl.glClearColor(0.9f, 0.9f, 0.9f, 1);
-			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT | (Gdx.graphics.getBufferFormat().coverageSampling ? GL20.GL_COVERAGE_BUFFER_BIT_NV : 0));
 			manageCameraTranslation();
 			cam.update();
 			Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -118,17 +119,19 @@ public class WaveBall extends ApplicationAdapter {
 			
 			_spriteBatch.setProjectionMatrix(cam.combined);
 			_spriteBatch.begin();
-			wave.render(_spriteBatch, cameraX);
-			wave.update(cameraX);
+			_assetLoader.background.setBounds(cam.position.x - screenWidth / 2, cam.position.y - screenHeight / 2, screenWidth, screenHeight);
+			_assetLoader.background.draw(_spriteBatch);
 			counterWave.render(_spriteBatch, cameraX);
 			counterWave.update(cameraX);
+			wave.render(_spriteBatch, cameraX);
+			wave.update(cameraX);
 			checkGameEnd();
 			_scoreBoard.render(_spriteBatch, cameraX, wave.getScore());
 			_spriteBatch.end();
 			Gdx.gl.glDisable(GL20.GL_BLEND);
 		} else if (_gameState == GameState.MENU) {
 			Gdx.gl.glClearColor(0.9f, 0.9f, 0.9f, 1);
-			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT | (Gdx.graphics.getBufferFormat().coverageSampling ? GL20.GL_COVERAGE_BUFFER_BIT_NV : 0));
 			Gdx.gl.glEnable(GL20.GL_BLEND);
 		    Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 			_spriteBatch.setProjectionMatrix(cam.combined);
@@ -145,42 +148,62 @@ public class WaveBall extends ApplicationAdapter {
 			restartGame();
 		}
 		boolean found = false;
-		int collidingDiamondIndex = 0;
+		int collidingIndex = 0;
 		for (CircleEntity enemy: counterWave._circles) {
 			if (enemy._type == Type.ENEMY && Intersector.overlaps(enemy.shape, wave.ballShape)) {
-				restartGame();
-				return;
+				if (!wave._heroMode) {
+					restartGame();
+					return;
+				}
 			}
 			if (enemy._type == Type.DIAMOND && Intersector.overlaps(enemy.shape, wave.ballShape)) {
+				counterWave.plusOne(enemy._x, enemy._y);
 				found = true;
 				wave.incrementPoints(1);
 			}
 			if (!found) {
-				collidingDiamondIndex++;
+				collidingIndex++;
 			}
 		}
 		if (found) {
-			counterWave._circles.remove(collidingDiamondIndex);
+			counterWave._circles.remove(collidingIndex);
 		}
+		found = false;
+		collidingIndex = 0;
 		for (Rotator rotator: wave._rotators) {
 			if (rotator.checkCollision(wave.ballShape)) {
-				restartGame();
-//				collided = true;
-				return;
+				if (!wave._heroMode) {
+					restartGame();
+	//				collided = true;
+					return;
+				}
+				if (!found) {
+					collidingIndex++;
+				}
 			}
 		}
-		collidingDiamondIndex = 0;
+		if (found) {
+			wave._rotators.remove(collidingIndex);
+		}
+		collidingIndex = 0;
 		found = false;
 		for (CircleEntity diamond: wave._diamonds) {
 			if (Intersector.overlaps(diamond.shape, wave.ballShape)) {
+				if (diamond._type == Type.HERO) {
+					wave._heroModeStartTime = System.currentTimeMillis();
+					wave._heroMode = true;
+					wave.hero(diamond._x, diamond._y);
+				} else {
+					counterWave.plusOne(diamond._x, diamond._y);
+					wave.incrementPoints(1);
+				}
 				found = true;
-				wave.incrementPoints(1);
 				break;
 			}
-			collidingDiamondIndex++;
+			collidingIndex++;
 		}
 		if (found) {
-			wave._diamonds.remove(collidingDiamondIndex);
+			wave._diamonds.remove(collidingIndex);
 		}
 	}
 	
@@ -195,6 +218,7 @@ public class WaveBall extends ApplicationAdapter {
 		_tmpVector.rotate(Constants.rotation);
 		cam.translate(_tmpVector.x, _tmpVector.y);
 		cameraX = 0.0f;
+		cameraY = 0.0f;
 	}
 	
 	private void storeScores() {
@@ -209,6 +233,7 @@ public class WaveBall extends ApplicationAdapter {
 			_tmpVector.y = 0.0f;
 			_tmpVector.rotate(Constants.rotation);
 			cam.translate(_tmpVector.x, _tmpVector.y);
+			cameraY += _tmpVector.y;
 			cameraX += wave.getBallX() - cameraX - screenWidth * _ballPositionFraction;
 		}
 	}
@@ -221,25 +246,25 @@ public class WaveBall extends ApplicationAdapter {
 	}
 	
 	private void renderButton(Button button, SpriteBatch spriteBatch) {
-		Sprite buttonSprite;
-		float width = button.boxWidth == 0.0f ? button.w : button.boxWidth;
-		float height = button.h;
-		width += button.paddingFractionX * width;
-		float ratio = width / height;
-		if (ratio < 2.0f) {
-			buttonSprite = _assetLoader.button1;
-		} else if (ratio < 6.0f) {
-			buttonSprite = _assetLoader.button2;
-		} else {
-			buttonSprite = _assetLoader.button3;
-		}
-		buttonSprite.setColor(0.5f, 0.5f, 0.5f, 0.9f);
-		buttonSprite.setRotation(0.0f);
-		float centerX = button.x + button.w / 2;
-		buttonSprite.setBounds(centerX - width * 0.5f, button.y - height * 1.4f, width, height * 1.8f);
-		buttonSprite.draw(spriteBatch);
-		button.font.setColor(0.0f, 0.0f, 0.0f, 0.9f);
-		button.font.draw(spriteBatch, button.label, button.x, button.y);
+//		Sprite buttonSprite;
+//		float width = button.boxWidth == 0.0f ? button.w : button.boxWidth;
+//		float height = button.h;
+//		width += button.paddingFractionX * width;
+//		float ratio = width / height;
+//		if (ratio < 2.0f) {
+//			buttonSprite = _assetLoader.button1;
+//		} else if (ratio < 6.0f) {
+//			buttonSprite = _assetLoader.button2;
+//		} else {
+//			buttonSprite = _assetLoader.button3;
+//		}
+//		buttonSprite.setColor(0.5f, 0.5f, 0.5f, 0.9f);
+//		buttonSprite.setRotation(0.0f);
+//		float centerX = button.x + button.w / 2;
+//		buttonSprite.setBounds(centerX - width * 0.5f, button.y - height * 1.4f, width, height * 1.8f);
+//		buttonSprite.draw(spriteBatch);
+//		button.font.setColor(0.0f, 0.0f, 0.0f, 0.9f);
+//		button.font.draw(spriteBatch, button.label, button.x, button.y);
 	}
 //	
 //    SpriteBatch batch;

@@ -14,6 +14,7 @@ public class WaveEquation {
 	public Stack<Float> rotatorPositions;
 	public Stack<Boolean> rotatorMultiple;
 	public Stack<Float> diamondPositions;
+	public Stack<Float> heroPositions;
 	private PhaseClassifier phaseClassifier;
 	public static void initSize(float aXMax, float aGranularity) {
 		xMax = aXMax;
@@ -30,6 +31,7 @@ public class WaveEquation {
 		rotatorPositions = new Stack<Float>();
 		rotatorMultiple = new Stack<Boolean>();
 		diamondPositions = new Stack<Float>();
+		heroPositions = new Stack<Float>();
 		float amplitude = baseAmplitude;
 		float y = 0.0f;
 		int i = 0;
@@ -47,12 +49,12 @@ public class WaveEquation {
 		float x;
 		boolean first = false, second = false;
 		float lastAngle = 0.0f;
-		float maxAngleDiff = 0.56f;
+		float maxAngleDiff = 0.66f;
 		for (x = 0.0f; i < size; x += granularity) {
 			y = waveEquation(angle, amplitude) + yBase;
 			amplitude += (amplitudeIncreasing ? amplitudeRate : -amplitudeRate);
 			angleDelta = angleDelta + (frequencyIncreasing ? angleRate : -angleRate);
-			if (amplitude > 1.9f * baseAmplitude) {
+			if (amplitude > 1.7f * baseAmplitude) {
 				amplitudeIncreasing = false;
 				lastAmplitudeChangeX = x;
 			}
@@ -78,18 +80,18 @@ public class WaveEquation {
 				lastFrequencyChangeX = x;
 				frequencyChangeWindow = findFrequencyChangeWindow(screenWidth);
 			}
-			if (!first && second && Math.abs(x - lastRotatorX - screenWidth / 7.0f) < screenWidth / 50.0f &&
-					phaseClassifier.getPhase(x) >= 3 && angleDelta < 0.6 * baseAngleDelta &&
-					Math.abs(lastAngle - angle) < maxAngleDiff) {
-				rotatorPositions.add(0, x);
-				rotatorMultiple.add(0, true);
-				lastRotatorX = x;
-				first = second = false;
-				System.out.println(Math.abs(lastAngle - angle) + " " + maxAngleDiff);
-				lastAngle = angle;
-			}
+//			if (!first && second && Math.abs(x - lastRotatorX - screenWidth / 7.0f) < screenWidth / 50.0f &&
+//					phaseClassifier.getPhase(x) >= 3 &&
+//					Math.abs(lastAngle - angle) < maxAngleDiff) {
+//				rotatorPositions.add(0, x);
+//				rotatorMultiple.add(0, true);
+//				lastRotatorX = x;
+//				first = second = false;
+//				System.out.println(Math.abs(lastAngle - angle) + " " + maxAngleDiff);
+//				lastAngle = angle;
+//			}
 			if (first && !second && Math.abs(x - lastRotatorX - screenWidth / 7.0f) < screenWidth / 50.0f &&
-					phaseClassifier.getPhase(x) >= 2 && angleDelta < 0.6 * baseAngleDelta &&
+					phaseClassifier.getPhase(x) >= 2 &&
 					Math.abs(lastAngle - angle) < maxAngleDiff) {
 				rotatorPositions.add(0, x);
 				rotatorMultiple.remove(0);
@@ -98,7 +100,7 @@ public class WaveEquation {
 				lastRotatorX = x;
 				second = true;
 				first = false;
-				System.out.println(Math.abs(lastAngle - angle) + " " + maxAngleDiff);
+//				System.out.println(Math.abs(lastAngle - angle) + " " + maxAngleDiff);
 				lastAngle = angle;
 			}
 			if (x - lastRotatorX > MathUtils.random(0.9f, 1.5f) * rotatorFrequency) {
@@ -119,7 +121,11 @@ public class WaveEquation {
 			float pos1 = rotatorPositions.get(i);
 			float pos2 = rotatorPositions.get(i + 1);
 			if (pos1 - pos2 > screenWidth / 5.0f && Math.random() > 0.5) {
-				diamondPositions.add((pos1 + pos2) / 2 + MathUtils.random(-0.3f, 0.3f) * (pos1 - pos2));
+				if (Math.random() > 0.1) {
+					diamondPositions.add((pos1 + pos2) / 2 + MathUtils.random(-0.3f, 0.3f) * (pos1 - pos2));
+				} else {
+					heroPositions.add((pos1 + pos2) / 2 + MathUtils.random(-0.3f, 0.3f) * (pos1 - pos2));
+				}
 			}
 		}
 		spline = new CatmullRomSpline<Vector2>(controlPoints, true);
@@ -175,5 +181,14 @@ public class WaveEquation {
 	}
 	public void popDiamondPosition() {
 		diamondPositions.pop();
+	}
+	public boolean allHerosDone() {
+		return heroPositions.isEmpty();
+	}
+	public float peekNextHeroPosition() {
+		return heroPositions.peek();
+	}
+	public void popHeroPosition() {
+		heroPositions.pop();
 	}
 }

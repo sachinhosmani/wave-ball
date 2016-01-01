@@ -1,7 +1,7 @@
 package entities;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 
@@ -25,6 +25,24 @@ public class Wave {
 	protected AssetLoader _assetLoader;
 	private float vertices[] = new float[5 * 4];
 	private float _color;
+	private boolean _plusOne;
+	private long _plusOneTime;
+	private final long _plusOneTotalTime = 1000;
+	private float _plusOneX, _plusOneY;
+	protected TimeSnapshot _plusOneTimeSnapshot = new TimeSnapshot();
+	
+	public enum CircleType {
+		BALL,
+		ENEMY,
+		HERO,
+		DIAMOND,
+		INVISIBLE
+	};
+	
+	public enum WaveType {
+		MAIN,
+		COUNTER
+	};
 	
 	public Wave(float phase, float amplitude, float speed, float screenWidth, float screenHeight, Color color, AssetLoader assetLoader) {
 		_phase = phase;
@@ -43,7 +61,7 @@ public class Wave {
 	}
 	public void render(SpriteBatch renderer, float cameraX, boolean opposite, Color color) {
 		float y = 0.0f;
-		float prevX = (_startX != null) ? _startX : cameraX;
+		float prevX = (_startX != null) ? _startX : Math.max(0.0f, cameraX - _screenWidth /10.0f);
 		_waveEquation.get(prevX, _tmpVector);
 		float prevY = _tmpVector.y;
 		if (opposite) {
@@ -52,7 +70,8 @@ public class Wave {
 		float damping = 1.0f;
 		float dampingFraction = 1.0f;
 		boolean firstTime = true;
-		for (float x = cameraX; x <= cameraX + _screenWidth * 1.01f; x += _screenWidth / 200.0f) {
+		for (float x = Math.max(0.0f, cameraX - _screenWidth /10.0f); x <= cameraX + _screenWidth * 1.1f; ) {
+			x += _screenWidth / 200.0f / Math.min(Math.max(Math.sqrt(_tmpVector.len()), 1.0f), 20.0f);
 			if (x < prevX) {
 				continue;
 			} else if (firstTime) {
@@ -68,14 +87,16 @@ public class Wave {
 				damping *= dampingFraction;
 				dampingFraction *= 0.998f;
 			}
-			y = (y - _screenHeight / 2.0f) * damping + _screenHeight / 2.0f;
-			drawLine(renderer, x, y, prevX, prevY, _screenWidth / 300.0f, color);
+//			y = (y - _screenHeight / 2.0f) * damping + _screenHeight / 2.0f;
+			drawLine(renderer, x, y, prevX, prevY, _screenWidth / 300.0f, opposite ? WaveType.COUNTER : WaveType.MAIN);
 			prevY = y;
 			prevX = x;
+			_waveEquation.getDerivative(x, _tmpVector);
 		}
+		plusOneRender(renderer);
 	}
 
-	public void drawLine(SpriteBatch renderer, float x1, float y1, float x2, float y2, float width, Color color) {
+	public void drawLine(SpriteBatch renderer, float x1, float y1, float x2, float y2, float width, WaveType type) {
 		if (y1 > y2) {
 			float tmp = y1;
 			y1 = y2;
@@ -112,11 +133,20 @@ public class Wave {
 		_tmpVector1.rotate(-angle + 90);
 		x2 = _tmpVector1.x + midX;
 		y2 = _tmpVector1.y + midY;
-		_assetLoader.rectangle1.setColor(color);
-		_assetLoader.rectangle1.setBounds(x1 - width / 2.0f, y1, width, Math.abs(y2 - y1));
-		_assetLoader.rectangle1.setOriginCenter();
-		_assetLoader.rectangle1.setRotation(angle - 90);
-		_assetLoader.rectangle1.draw(renderer);
+
+		Sprite wave = type == WaveType.MAIN ? _assetLoader.wave1 : _assetLoader.wave2;
+		wave.setBounds(x1 - width / 2.0f, y1, width, Math.abs(y2 - y1));
+		wave.setOriginCenter();
+		wave.setRotation(angle - 90);
+		wave.draw(renderer);
+		
+//		y1 -= _screenWidth / 500.0f;
+//		y2 -= _screenWidth / 500.0f;
+//		Sprite wave = _assetLoader.shadow;
+//		wave.setBounds(x1 - width / 2.0f, y1, width, Math.abs(y2 - y1));
+//		wave.setOriginCenter();
+//		wave.setRotation(angle - 90);
+//		wave.draw(renderer);
 
 //		float xa = x1 - width / 2.0f;
 //		float ya = y1;
@@ -179,19 +209,79 @@ public class Wave {
 //	 
 //	  renderer.draw(_assetLoader.rectangle1.getTexture(), vertices, 0, vertices.length);
 	}
-	public void drawCircle(SpriteBatch renderer, float x, float y, float r, Color c) {
+	public void drawCircle(SpriteBatch renderer, float x, float y, float r, CircleType type) {
 		_tmpVector.x = x - _screenWidth / 2.0f;
 		_tmpVector.y = y - _screenHeight / 2.0f;
 		_tmpVector.rotate(Constants.rotation);
 		x = _screenWidth / 2.0f + _tmpVector.x;
 		y = _screenHeight / 2.0f + _tmpVector.y;
-		_assetLoader.circle2.setColor(c);
-		_assetLoader.circle2.setBounds(x - r, y - r, 2 * r, 2 * r);
-		_assetLoader.circle2.setOrigin(0.0f, 0.0f);
-		_assetLoader.circle2.setRotation(0.0f);
-		_assetLoader.circle2.draw(renderer);
+//		_assetLoader.circle2.setColor(c);
+		
+		Sprite asset;
+		switch (type) {
+		case BALL:
+			asset = _assetLoader.ball;
+			break;
+		case ENEMY:
+			asset = _assetLoader.enemy;
+			break;
+		case DIAMOND:
+			asset = _assetLoader.diamond;
+			break;
+		case HERO:
+			asset = _assetLoader.hero;
+			break;
+		default:
+			asset = _assetLoader.ball;
+		}
+		asset.setBounds(x - r, y - r, 2 * r, 2 * r);
+		if (type == CircleType.INVISIBLE) {
+			asset.setAlpha(0.4f);
+		} else {
+			asset.setAlpha(1.0f);
+		}
+		asset.setOrigin(0.0f, 0.0f);
+		asset.setRotation(0.0f);
+		asset.draw(renderer);
 	}
 	public float normalizeAngle(float angle) {
 		return angle - (float) ((int)(angle / 2 / Math.PI) * 2 * Math.PI);
+	}
+	public void plusOne(float x, float y) {
+		if (_plusOne) {
+			return;
+		}
+		_plusOne = true;
+		_plusOneTimeSnapshot.snapshot();
+		_plusOneX = x;
+		_plusOneY = y;
+	}
+	protected void plusOneUpdate() {
+		if (!_plusOne) {
+			return;
+		}
+		_plusOneTime += _plusOneTimeSnapshot.snapshot();
+		if (_plusOneTime >= _plusOneTotalTime) {
+			_plusOne = false;
+			_plusOneTime = 0;
+		}
+	}
+	protected void plusOneRender(SpriteBatch batcher) {
+		if (_plusOne) {
+			float fraction = ((float) _plusOneTime) / _plusOneTotalTime;
+			_plusOneY *= 1.005f;
+			_tmpVector.x = _plusOneX - _screenWidth / 2.0f;
+			_tmpVector.y = _plusOneY - _screenHeight / 2.0f;
+			_tmpVector.rotate(Constants.rotation);
+			
+			float size = _screenWidth / 25.0f * (0.3f + 0.7f * fraction);
+			_assetLoader.plusOne.setBounds(_tmpVector.x + _screenWidth / 2.0f, _tmpVector.y + _screenHeight / 2.0f, size,  size);
+			_assetLoader.plusOne.draw(batcher);
+			
+			System.out.println("plus one");
+		}
+	}
+	protected void update() {
+		plusOneUpdate();
 	}
 }

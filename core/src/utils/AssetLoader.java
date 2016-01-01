@@ -27,20 +27,13 @@ import com.badlogic.gdx.utils.I18NBundle;
 public class AssetLoader {
 	public AssetManager manager = new AssetManager();
 	
-	public Sprite pause, back;
-	public Sprite circle1, circle2;
-	public Sprite rectangle1, rectangle2;
-	public Sprite chain;
-	public Sprite hollow1, hollow2;
+	public Sprite ball, enemy;
+	public Sprite diamond, hero;
+	public Sprite wave1, wave2, shadow;
+	public Sprite beam;
 	public Sprite background;
-	public Sprite button1, button2, button3;
-	public Sprite shareButton, creditsButton;
-	public Sprite goal;
-	public Sprite protagonist;
+	public Sprite plusOne;
 	
-	public Sound goalSound;
-	public Sound waterDropSound;
-	public Music cleanSoul;
 	public int fontSize1, fontSize2, fontSize3, fontSize4;
 	public float screenWidth, screenHeight;
 	public int SMALL_FONT = 0;
@@ -61,106 +54,36 @@ public class AssetLoader {
 	public I18NBundle i18nBundle;
 	
 	public void load(float screenWidth, float screenHeight) {
-		manager.load("spritesheet.txt", TextureAtlas.class);
-		if (screenWidth <= 0) {
-			manager.load("500/spritesheet.txt", TextureAtlas.class);
-			manager.load("500/background.jpg", Texture.class);
-		} else if (screenWidth <= 1000) {
-			manager.load("1000/spritesheet.txt", TextureAtlas.class);
-			manager.load("1000/background.jpg", Texture.class);
-			manager.load("1000/hollow2.png", Texture.class);
-		} else if (screenWidth <= 1500) {
-			manager.load("1500/spritesheet.txt", TextureAtlas.class);
-			manager.load("1500/background.jpg", Texture.class);
-			manager.load("1500/hollow1.png", Texture.class);
-			manager.load("1500/hollow2.png", Texture.class);
-		} else if (screenWidth <= 2000) {
-			manager.load("2000/spritesheet.txt", TextureAtlas.class);
-			manager.load("2000/hollow1.png", Texture.class);
-			manager.load("2000/hollow2.png", Texture.class);
-			manager.load("2000/background.jpg", Texture.class);
-		} else {
-			manager.load("2500/spritesheet.txt", TextureAtlas.class);
-			manager.load("2500/hollow1.png", Texture.class);
-			manager.load("2500/hollow2.png", Texture.class);
-			manager.load("2500/background.jpg", Texture.class);
-		}
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
-		manager.load("goal.wav", Sound.class);
-		manager.load("water_drop.mp3", Sound.class);
-		manager.load("music.mp3", Music.class);
 		
-		manager.load("circle.png", Texture.class);
+		manager.load("ball.png", Texture.class);
+		manager.load("diamond.png", Texture.class);
+		manager.load("line1.png", Texture.class);
+		manager.load("line2.png", Texture.class);
+		manager.load("shadow.png", Texture.class);
+		manager.load("enemy.png", Texture.class);
+		manager.load("beam.png", Texture.class);
+		manager.load("star.png", Texture.class);
+		manager.load("background.png", Texture.class);
+		manager.load("+1.png", Texture.class);
 		loadFonts();
 	}
 
 	public void assignAssets() {
-		TextureAtlas spriteSheet = manager.get("spritesheet.txt", TextureAtlas.class);
-		TextureAtlas screenDependentSpriteSheet;
-		if (screenWidth <= 0) {
-			screenDependentSpriteSheet = manager.get("500/spritesheet.txt", TextureAtlas.class);
-			hollow1 = screenDependentSpriteSheet.createSprite("hollow1");
-			hollow2 = screenDependentSpriteSheet.createSprite("hollow2");
-			background = new Sprite(manager.get("500/background.jpg", Texture.class));
-		} else if (screenWidth <= 1000) {
-			screenDependentSpriteSheet = manager.get("1000/spritesheet.txt", TextureAtlas.class);
-			hollow1 = screenDependentSpriteSheet.createSprite("hollow1");
-			hollow2 = new Sprite(manager.get("1000/hollow2.png", Texture.class));
-			background = new Sprite(manager.get("1000/background.jpg", Texture.class));
-		} else if (screenWidth <= 1500) {
-			screenDependentSpriteSheet = manager.get("1500/spritesheet.txt", TextureAtlas.class);
-			hollow1 = new Sprite(manager.get("1500/hollow1.png", Texture.class));
-			hollow2 = new Sprite(manager.get("1500/hollow2.png", Texture.class));
-			background = new Sprite(manager.get("1500/background.jpg", Texture.class));
-		} else if (screenWidth <= 2000) {
-			screenDependentSpriteSheet = manager.get("2000/spritesheet.txt", TextureAtlas.class);
-			hollow1 = new Sprite(manager.get("2000/hollow1.png", Texture.class));
-			hollow2 = new Sprite(manager.get("2000/hollow2.png", Texture.class));
-			background = new Sprite(manager.get("2000/background.jpg", Texture.class));
-		} else {
-			screenDependentSpriteSheet = manager.get("2500/spritesheet.txt", TextureAtlas.class);
-			hollow1 = new Sprite(manager.get("2500/hollow1.png", Texture.class));
-			hollow2 = new Sprite(manager.get("2500/hollow2.png", Texture.class));
-			background = new Sprite(manager.get("2500/background.jpg", Texture.class));
-		}
 		
-		pause = spriteSheet.createSprite("pause");
-		back = spriteSheet.createSprite("back");
-		circle1 = new Sprite(manager.get("circle.png", Texture.class));
-		circle2 = screenDependentSpriteSheet.createSprite("circle2");
-		rectangle1 = screenDependentSpriteSheet.createSprite("rectangle1");
-		rectangle2 = screenDependentSpriteSheet.createSprite("rectangle2");
-		chain = spriteSheet.createSprite("chain2");
-		protagonist = screenDependentSpriteSheet.createSprite("protagonist");
-		button1 = spriteSheet.createSprite("button1");
-		button2 = spriteSheet.createSprite("button2");
-		button3 = spriteSheet.createSprite("button3");
-		goal = screenDependentSpriteSheet.createSprite("light");
-		creditsButton = spriteSheet.createSprite("info");
-		shareButton = spriteSheet.createSprite("share");
-		
-		goal.flip(false, true);
-		
-		Sprite[] sprites = {pause, back, circle1, circle2, rectangle1, rectangle2, chain, background, protagonist,
-				button1, button2, button3, goal, creditsButton, shareButton, hollow1, hollow2};
-		for (Sprite sprite: sprites) {
-			sprite.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		}
-		
-		for (int i = 0; i < 11; i++) {
-			unsafeCircle[i] = spriteSheet.findRegion("spiral" + i);
-		}
-		unsafeCircleAnimation = new Animation(0.04f, unsafeCircle);
-		
-		for (int i = 0; i < 20; i++) {
-			unsafeRectangle[i] = spriteSheet.findRegion("rect_spiral" + i);
-		}
-		unsafeRectangleAnimation = new Animation(0.04f, unsafeRectangle);
-		goalSound = manager.get("goal.wav", Sound.class);
-		waterDropSound = manager.get("water_drop.mp3", Sound.class);
-		cleanSoul = manager.get("music.mp3", Music.class);
-		
+		ball = new Sprite(manager.get("ball.png", Texture.class));
+		diamond = new Sprite(manager.get("diamond.png", Texture.class));
+		hero = new Sprite(manager.get("star.png", Texture.class));
+		enemy = new Sprite(manager.get("enemy.png", Texture.class));
+		beam = new Sprite(manager.get("beam.png", Texture.class));
+		background = new Sprite(manager.get("background.png", Texture.class));
+		wave1 = new Sprite(manager.get("line1.png", Texture.class));
+		wave2 = new Sprite(manager.get("line2.png", Texture.class));
+		shadow = new Sprite(manager.get("shadow.png", Texture.class));
+		plusOne = new Sprite(manager.get("+1.png", Texture.class));
+		shadow.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+	
 		ubuntuFont[SMALL_FONT] = manager.get("ubuntu1.ttf", BitmapFont.class);
 		ubuntuFont[MEDIUM_FONT] = manager.get("ubuntu2.ttf", BitmapFont.class);
 		ubuntuFont[LARGE_FONT] = manager.get("ubuntu3.ttf", BitmapFont.class);
@@ -325,11 +248,6 @@ public class AssetLoader {
 		generator.dispose();
 	}
 	public void dispose() {
-		Sprite[] sprites = {pause, back, circle1, circle2, rectangle1, rectangle2, chain, background, protagonist,
-				button1, button2, button3, goal, creditsButton, shareButton, hollow1, hollow2};
-		for (Sprite sprite: sprites) {
-			sprite.getTexture().dispose();
-		}
 		
 		ubuntuFont[SMALL_FONT].dispose();
 		ubuntuFont[MEDIUM_FONT].dispose();
@@ -347,9 +265,6 @@ public class AssetLoader {
 		goodFont[MEDIUM_FONT].dispose();
 		goodFont[LARGE_FONT].dispose();
 		
-		goalSound.dispose();
-		waterDropSound.dispose();
-		cleanSoul.dispose();
 	}
 	public boolean update() {
 		return manager.update();

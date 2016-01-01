@@ -47,7 +47,7 @@ public class Rotator {
 		_y = y;
 		_screenWidth = screenWidth;
 		_screenHeight = screenHeight;
-		float rotatorLength = _screenWidth / 30.0f;
+		float rotatorLength = _screenWidth / 25.0f;
 		point1 = new Vector2(-rotatorLength / 2.0f, -rotatorWidth / 2.0f);
 		point2 = new Vector2(rotatorLength / 2.0f, -rotatorWidth / 2.0f);
 		point3 = new Vector2(-rotatorLength / 2.0f, rotatorWidth / 2.0f);
@@ -113,8 +113,8 @@ public class Rotator {
 		point3.rotateRad(_angle);
 		point4.rotateRad(_angle);
 		
-		drawLine(renderer, _x + point1.x, _y + point1.y, _x + point2.x, _y + point2.y, _screenWidth / 100.0f, color, shape1);
-		drawLine(renderer, _x + point3.x, _y + point3.y, _x + point4.x, _y + point4.y, _screenWidth / 100.0f, color, shape2);
+		drawLine(renderer, _x + point1.x, _y + point1.y, _x + point2.x, _y + point2.y, _screenWidth / 25.0f / 2.6666f, color, shape1);
+		drawLine(renderer, _x + point3.x, _y + point3.y, _x + point4.x, _y + point4.y, _screenWidth / 25.0f / 2.6666f, color, shape2);
 		
 		point1.rotateRad(-_angle);
 		point2.rotateRad(-_angle);
@@ -123,6 +123,7 @@ public class Rotator {
 	}
 	
 	public void drawLine(SpriteBatch renderer, float x1, float y1, float x2, float y2, float width, Color color, Polygon shape) {
+		boolean reversed = false;
 		if (y1 > y2) {
 			float tmp = y1;
 			y1 = y2;
@@ -130,6 +131,7 @@ public class Rotator {
 			tmp = x1;
 			x1 = x2;
 			x2 = tmp;
+			reversed = true;
 		}
 		
 		_tmpVector1.x = x1 - _screenWidth / 2.0f;
@@ -160,11 +162,11 @@ public class Rotator {
 		x2 = _tmpVector1.x + midX;
 		y2 = _tmpVector1.y + midY;
 		
-		_assetLoader.rectangle1.setColor(color);
-		_assetLoader.rectangle1.setBounds(x1 - width / 2.0f, y1, width, Math.abs(y2 - y1));
-		_assetLoader.rectangle1.setOriginCenter();
-		_assetLoader.rectangle1.setRotation(angle - 90);
-		_assetLoader.rectangle1.draw(renderer);
+//		_assetLoader.beam.setColor(color);
+		_assetLoader.beam.setBounds(x1 - width / 2.0f, y1, width, Math.abs(y2 - y1));
+		_assetLoader.beam.setOriginCenter();
+		_assetLoader.beam.setRotation(reversed ? angle + 90 : angle - 90);
+		_assetLoader.beam.draw(renderer);
 		
 		float length = y2 - y1;
 		float[] vertices = shape.getVertices();
@@ -193,14 +195,6 @@ public class Rotator {
 	private void centroid(float[] vertices, Vector2 vector) {
 		vector.x = (vertices[0] + vertices[2] + vertices[4] + vertices[6]) / 4.0f;
 		vector.y = (vertices[1] + vertices[3] + vertices[5] + vertices[7]) / 4.0f;
-	}
-	
-	private void drawLine2(SpriteBatch renderer, float x1, float y1, float x2, float y2, float angle, Color color) {
-		_assetLoader.rectangle1.setColor(color);
-		_assetLoader.rectangle1.setBounds(x1, y1, Math.abs(y2 - y1), Math.abs(y2 - y1));
-		_assetLoader.rectangle1.setOriginCenter();
-		_assetLoader.rectangle1.setRotation(angle - 90);
-		_assetLoader.rectangle1.draw(renderer);
 	}
 	
 	public boolean overlaps(Polygon polygon, Circle circle) {

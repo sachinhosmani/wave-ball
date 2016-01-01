@@ -5,10 +5,10 @@ import java.util.LinkedList;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
+import entities.CircleEntity.Type;
+import entities.Wave.CircleType;
 import utils.AccelerationManager;
 import utils.AssetLoader;
-import utils.CircleEntity;
-import utils.CircleEntity.Type;
 import utils.TimeSnapshot;
 import utils.WaveEquation;
 
@@ -39,6 +39,7 @@ public class CounterWave extends Wave {
 		_circles.remove(diamond);
 	}
 	public void update(float cameraX) {
+		super.update();
 		tryAddEnemyOrDiamond(cameraX);
 		long timeDiff = _timeSnapshot.snapshot();
 		for (CircleEntity enemy: _circles) {
@@ -75,7 +76,7 @@ public class CounterWave extends Wave {
 	public void render(SpriteBatch renderer, float cameraX) {
 		super.render(renderer, cameraX, true, waveColor);
 		for (CircleEntity enemy: _circles) {
-			drawCircle(renderer, enemy._x, enemy._y, _enemyRadius, enemy._type == Type.DIAMOND ? _diamondColor : _enemyColor);
+			drawCircle(renderer, enemy._x, enemy._y, _enemyRadius, enemy._type == Type.DIAMOND ? CircleType.DIAMOND : CircleType.ENEMY);
 		}
 	}
 }

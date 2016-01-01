@@ -1,4 +1,4 @@
-package utils;
+package entities;
 
 import com.badlogic.gdx.math.Circle;
 
@@ -10,7 +10,8 @@ public class CircleEntity {
 	public Circle shape;
 	public enum Type {
 		DIAMOND,
-		ENEMY
+		ENEMY,
+		HERO
 	};
 	public Type _type;
 	public CircleEntity(float x, float y, float r, float speed) {

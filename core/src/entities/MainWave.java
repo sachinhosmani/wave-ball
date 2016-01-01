@@ -9,10 +9,12 @@ import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
+import entities.CircleEntity.Type;
 import utils.Acceleration;
 import utils.AssetLoader;
-import utils.CircleEntity;
+import utils.Constants;
 import utils.PhaseClassifier;
+import utils.TimeSnapshot;
 import utils.WaveEquation;
 
 public class MainWave extends Wave {
@@ -25,7 +27,9 @@ public class MainWave extends Wave {
 	protected float _lastRotatorLaunchX = 0.0f;
 	protected boolean _lastRotatorClockwise;
 	private static final Color color = new Color(0.0f, 0.0f, 1.0f, 0.9f);
+	private static final Color heroColor = new Color(0.0f, 0.5f, 1.0f, 0.4f);
 	public Circle ballShape;
+	public Circle helperBallShape;
 	public Vector2 ballVector = new Vector2();
 	private Vector2 _tmpVector = new Vector2();
 	private float camSpeedTrailing;
@@ -35,10 +39,11 @@ public class MainWave extends Wave {
 	private float _ballMaxBoostedSpeed;
 	private static Color waveColor = new Color(0.0f, 1.0f, 0.0f, 0.5f);
 	private static Color _diamondColor = new Color(1.0f, 0.7f, 0.0f, 0.9f);
+	private static Color _heroColor = new Color(0.2f, 0.7f, 0.3f, 0.9f);
 	private float _baseAngleDelta;
 	private int _score;
 	private int _points;
-	private ArrayList<Float> _rotatorPositions;
+	private LinkedList<Float> _rotatorPositions;
 	private float _rotatorSpeed;
 	public ArrayList<CircleEntity> _diamonds;
 	private float _diamondRadius;
@@ -46,6 +51,16 @@ public class MainWave extends Wave {
 	private float _lastSpeed;
 	private boolean _lastVaryingSpeed;
 	private boolean _lastMultiple = false;
+	public boolean _heroMode;
+	public long _heroModeStartTime;
+	private long HERO_DURATION = 5000;
+	private boolean _heroAnim;
+	
+	private TimeSnapshot _heroAnimTimeSnapshot = new TimeSnapshot();
+	private float _heroAnimX;
+	private float _heroAnimY;
+	private long _heroAnimTime;
+	private final long _heroAnimTotalTime = 1000;
 
 	public float getBallX() {
 		return _ballX;
@@ -66,6 +81,7 @@ public class MainWave extends Wave {
 		_radius = radius;
 		_acceleration = new Acceleration(speed / 50.0f, speed / 300.0f, speed);
 		ballShape = new Circle(0.0f, 0.0f, _radius);
+		helperBallShape = new Circle(0.0f, 0.0f, _radius);
 		_startX = 0.0f;
 		camSpeedTrailing = (float) screenWidth / 6.0f;
 		rotatorWidth = _screenWidth / 11.95f;
@@ -74,13 +90,17 @@ public class MainWave extends Wave {
 		_ballMaxBoostedSpeed = speed * 1.5f;
 		_score = 0;
 		_points = 0;
-		_rotatorPositions = new ArrayList<Float>();
+		_rotatorPositions = new LinkedList<Float>();
 		_rotatorSpeed = (float) Math.PI / 1300.0f;
 		_diamonds = new ArrayList<CircleEntity>();
-		_diamondRadius = _screenWidth / 70.0f;
+		_diamondRadius = _screenWidth / 50.0f;
+		_heroMode = false;
+		_heroModeStartTime = 0;
 	}
 
 	public void update(float cameraX) {
+		super.update();
+		heroUpdate();
 		updateBallMaxSpeed();
 		long timeElapsed = _timeSnapshot.snapshot();
 		_startX = Math.max(_startX + camSpeedTrailing * timeElapsed / 1000.0f, cameraX);
@@ -89,12 +109,15 @@ public class MainWave extends Wave {
 		} else {
 			_acceleration.stop();
 		}
-		if (!_waveEquation.allRotatorsDone() && (cameraX + _screenWidth) > _waveEquation.peekNextRotatorPosition()) {
+		if (!_waveEquation.allRotatorsDone() && (cameraX + _screenWidth * 1.5f) > _waveEquation.peekNextRotatorPosition()) {
 			float xPos = _waveEquation.peekNextRotatorPosition();
 			_waveEquation.popRotatorPosition();
 			addRotator(xPos, _waveEquation.peekRotatorMultiple());
 			_waveEquation.popRotatorMultiple();
 			_rotatorPositions.add(xPos);
+		}
+		if (_rotatorPositions.size() != 0 && _rotatorPositions.get(0) < cameraX - _screenWidth / 2.0f) {
+			_rotatorPositions.remove(0);
 		}
 		_acceleration.update(timeElapsed);
 		increasePhase(timeElapsed * _acceleration.getSpeed() / 1000);
@@ -109,23 +132,37 @@ public class MainWave extends Wave {
 		}
 		tryRemoveRotator(cameraX);
 		rotatorWidth = Math.max(_screenWidth / 14.0f, rotatorWidth - _screenWidth / 220000.0f);
-		camSpeedTrailing = Math.min(camSpeedTrailing + _screenWidth / 40000.0f, 1.5f * _screenWidth / 5.0f);
+//		camSpeedTrailing = Math.min(camSpeedTrailing + _screenWidth / 40000.0f, 1.5f * _screenWidth / 5.0f);
 		updateScore();
 //		_ballMaxSpeed = Math.min(_ballMaxSpeed + _screenWidth / 100000.0f, _screenWidth / 4.0f);
 		_ballMaxBoostedSpeed = _ballMaxSpeed * 1.3f;
 		
-		_rotatorSpeed = Math.min(_rotatorSpeed + (float) Math.PI / 1300.0f / 80000.0f, (float) Math.PI / 1100.0f);
+//		_rotatorSpeed = Math.min(_rotatorSpeed + (float) Math.PI / 1300.0f / 80000.0f, (float) Math.PI / 1100.0f);
 		
 		if (!_waveEquation.allDiamondsDone() && (cameraX + _screenWidth) > _waveEquation.peekNextDiamondPosition()) {
 			float xPos = _waveEquation.peekNextDiamondPosition();
 			_waveEquation.popDiamondPosition();
 			addDiamond(xPos);
 		}
+		if (!_waveEquation.allHerosDone() && (cameraX + _screenWidth) > _waveEquation.peekNextHeroPosition()) {
+			float xPos = _waveEquation.peekNextHeroPosition();
+			_waveEquation.popHeroPosition();
+			addHero(xPos);
+		}
 		tryRemoveDiamonds(cameraX);
+		if (System.currentTimeMillis() - _heroModeStartTime > HERO_DURATION) {
+			_heroMode = false;
+		}
 	}
+
 	protected void addDiamond(float x) {
 		_waveEquation.get(x, _tmpVector);
-		_diamonds.add(new CircleEntity(x, _tmpVector.y,  _diamondRadius, (float) _screenWidth / 2.0f));
+		_diamonds.add(new CircleEntity(x, _tmpVector.y,  _diamondRadius, (float) _screenWidth / 2.0f, Type.DIAMOND));
+	}
+	protected void addHero(float x) {
+		_waveEquation.get(x, _tmpVector);
+		_diamonds.add(new CircleEntity(x, _tmpVector.y,  _diamondRadius, (float) _screenWidth / 2.0f, Type.HERO));
+		_heroMode = true;
 	}
 	private void tryRemoveDiamonds(float cameraX) {
 		if (_diamonds.size() == 0) {
@@ -167,6 +204,7 @@ public class MainWave extends Wave {
 			return;
 		}
 		if (_ballX > _rotatorPositions.get(0) + _screenWidth / 10.0f) {
+//			System.out.println(_rotatorPositions.size());
 			_score++;
 			_rotatorPositions.remove(0);
 		}
@@ -174,12 +212,13 @@ public class MainWave extends Wave {
 	
 	public void render(SpriteBatch renderer, float cameraX) {
 		super.render(renderer, cameraX, waveColor);
-		drawCircle(renderer, _ballX, _ballY, _radius, color);
+		heroRender(renderer);
+		drawCircle(renderer, _ballX, _ballY, _radius, _heroMode ? CircleType.INVISIBLE : CircleType.BALL);
 		for (Rotator rotator: _rotators) {
 			rotator.render(renderer);
 		}
 		for (CircleEntity diamond: _diamonds) {
-			drawCircle(renderer, diamond._x, diamond._y, _diamondRadius, _diamondColor);
+			drawCircle(renderer, diamond._x, diamond._y, _diamondRadius, diamond._type == Type.DIAMOND ? CircleType.DIAMOND : CircleType.HERO);
 		}
 	}
 	public void start() {
@@ -190,7 +229,7 @@ public class MainWave extends Wave {
 	}
 	private void addRotator(float x, boolean multiple) {
 		if (multiple && _lastMultiple) {
-			System.out.println(_lastAngle - (float) Math.atan2(_tmpVector.y, _tmpVector.x));
+//			System.out.println(_lastAngle - (float) Math.atan2(_tmpVector.y, _tmpVector.x));
 		}
 		_waveEquation.get(x, _tmpVector);
 		boolean clockwise = rotatorClockwise(x);
@@ -213,7 +252,7 @@ public class MainWave extends Wave {
 			return;
 		}
 		Rotator rotator = _rotators.get(0);
-		if (rotator._x < cameraX) {
+		if (rotator._x < cameraX - _screenWidth / 2.0f) {
 			_rotators.remove(0);
 		}
 	}
@@ -233,6 +272,9 @@ public class MainWave extends Wave {
 		if (multiple && _lastMultiple) {
 			return _lastSpeed;
 		}
+		if (multiple && !_lastMultiple) {
+			return _rotatorSpeed * 1.1f;
+		}
 		return _rotatorSpeed * MathUtils.random(0.8f, 1.1f);
 	}
 	private boolean rotatorVaryingSpeed(boolean multiple) {
@@ -249,12 +291,47 @@ public class MainWave extends Wave {
 			return false;
 		}
 		if (_phaseClassifier.getPhase(_ballX) <= 1) {
-			System.out.println("easy");
+//			System.out.println("easy");
 			return true;
 		}
 		return false;
 	}
 	public void destroyDiamond(CircleEntity diamond) {
 		_diamonds.remove(diamond);
+	}
+	
+	public void hero(float x, float y) {
+		if (_heroAnim) {
+			return;
+		}
+		_heroAnim = true;
+		_heroAnimX = x;
+		_heroAnimY = y;
+		_heroAnimTimeSnapshot.snapshot();
+	}
+	protected void heroUpdate() {
+		if (!_heroAnim) {
+			return;
+		}
+		_heroAnimTime += _heroAnimTimeSnapshot.snapshot();
+		if (_heroAnimTime >= _heroAnimTotalTime) {
+			_heroAnim = false;
+			_heroAnimTime = 0;
+		}
+	}
+	protected void heroRender(SpriteBatch batcher) {
+		if (_heroAnim) {
+			float fraction = ((float) _heroAnimTime) / _heroAnimTotalTime;
+			_heroAnimY *= 1.005f;
+			_tmpVector.x = _heroAnimX - _screenWidth / 2.0f;
+			_tmpVector.y = _heroAnimY - _screenHeight / 2.0f;
+			_tmpVector.rotate(Constants.rotation);
+			
+			float size = _screenWidth / 25.0f * (0.3f + 0.7f * fraction);
+			_assetLoader.hero.setBounds(_tmpVector.x + _screenWidth / 2.0f, _tmpVector.y + _screenHeight / 2.0f, size,  size);
+			_assetLoader.hero.draw(batcher);
+			
+			System.out.println("hero");
+		}
 	}
 }
