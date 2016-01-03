@@ -25,11 +25,13 @@ import utils.AssetLoader;
 import utils.Constants;
 import utils.InputHandler;
 import utils.PreferenceManager;
+import utils.TimeSnapshot;
 import utils.WaveEquation;
 
 public class WaveBall extends ApplicationAdapter {
 	private ShapeRenderer renderer;
 	private OrthographicCamera cam;
+	private OrthographicCamera fixedCam;
 	private float screenWidth;
 	private float screenHeight;
 	private MainWave wave;
@@ -39,7 +41,10 @@ public class WaveBall extends ApplicationAdapter {
 	private float cameraX = 0.0f;
 	private float cameraY = 0.0f;
 	FPSLogger logger = new FPSLogger();
+	private final long FALLING_DURATION_TOTAL = 1000;
+	private long _fallingDuration = 0;
 	
+	private TimeSnapshot _timeSnapshot = new TimeSnapshot();
 	private float _ballSize;
 	private float _enemySize;
 	private float _waveAmplitude;
@@ -52,20 +57,20 @@ public class WaveBall extends ApplicationAdapter {
 	private final float _ballPositionFraction = 0.4f;
 	private SpriteBatch _spriteBatch;
 	boolean collided = false;
-	private enum GameState {
-		PLAYING, MENU
+	public enum GameState {
+		PLAYING, MENU, BALL_FALLING
 	};
-	private GameState _gameState = GameState.PLAYING;
+	private GameState _gameState = GameState.MENU;
 	private MainMenu _mainMenu;
 	private PreferenceManager _prefManager;
 	@Override
 	public void create() {
-		screenWidth = Gdx.graphics.getWidth() * 1.1f;
-		screenHeight = Gdx.graphics.getHeight() * 1.1f;
+		screenWidth = Gdx.graphics.getWidth();
+		screenHeight = Gdx.graphics.getHeight();
 		cam = new OrthographicCamera();
 		cam.setToOrtho(false, screenWidth, screenHeight);
-		renderer = new ShapeRenderer();
-		renderer.setProjectionMatrix(cam.combined);
+		fixedCam = new OrthographicCamera();
+		fixedCam.setToOrtho(false, screenWidth, screenHeight);
 		_spriteBatch = new SpriteBatch();
 		_spriteBatch.setProjectionMatrix(cam.combined);
 		camSpeedNormal = (float) screenWidth / 4.25f;
@@ -80,14 +85,14 @@ public class WaveBall extends ApplicationAdapter {
 		
 		WaveEquation.initSize(screenWidth * 100, screenWidth / 1000.0f);
 		AccelerationManager.initSize(screenWidth * 100, screenWidth / 100.0f);
+		_scoreBoard = new ScoreBoard(screenWidth, screenHeight, _assetLoader);
 		wave = new MainWave(0.0f, _waveAmplitude, 2, camSpeedNormal, _ballSize, screenWidth * _ballPositionFraction,
-				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _assetLoader);
+				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _scoreBoard, _assetLoader);
 		counterWave = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
 				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation(), _assetLoader);
 		counterWave.setWaveEquation(wave.getWaveEquation());
 		inputHandler = new InputHandler(screenWidth, screenHeight, this);
 		Gdx.input.setInputProcessor(inputHandler);
-		_scoreBoard = new ScoreBoard(screenWidth, screenHeight, _assetLoader);
 		
 		_tmpVector = new Vector2();
 		_prefManager = new PreferenceManager();
@@ -108,14 +113,13 @@ public class WaveBall extends ApplicationAdapter {
 			}
 			return;
 		}
-		if (_gameState == GameState.PLAYING) {
+		if (_gameState == GameState.PLAYING || _gameState == GameState.BALL_FALLING) {
 			Gdx.gl.glClearColor(0.9f, 0.9f, 0.9f, 1);
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT | (Gdx.graphics.getBufferFormat().coverageSampling ? GL20.GL_COVERAGE_BUFFER_BIT_NV : 0));
 			manageCameraTranslation();
 			cam.update();
 			Gdx.gl.glEnable(GL20.GL_BLEND);
 		    Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-			renderer.setProjectionMatrix(cam.combined);
 			
 			_spriteBatch.setProjectionMatrix(cam.combined);
 			_spriteBatch.begin();
@@ -124,8 +128,12 @@ public class WaveBall extends ApplicationAdapter {
 			counterWave.render(_spriteBatch, cameraX);
 			counterWave.update(cameraX);
 			wave.render(_spriteBatch, cameraX);
-			wave.update(cameraX);
-			checkGameEnd();
+			wave.update(cameraX, _gameState);
+			if (_gameState == GameState.PLAYING) {
+				checkGameEnd();
+			}
+			_spriteBatch.setProjectionMatrix(fixedCam.combined);
+			_scoreBoard.update();
 			_scoreBoard.render(_spriteBatch, cameraX, wave.getScore());
 			_spriteBatch.end();
 			Gdx.gl.glDisable(GL20.GL_BLEND);
@@ -134,25 +142,40 @@ public class WaveBall extends ApplicationAdapter {
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT | (Gdx.graphics.getBufferFormat().coverageSampling ? GL20.GL_COVERAGE_BUFFER_BIT_NV : 0));
 			Gdx.gl.glEnable(GL20.GL_BLEND);
 		    Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-			_spriteBatch.setProjectionMatrix(cam.combined);
+		    _spriteBatch.setProjectionMatrix(fixedCam.combined);
 			_spriteBatch.begin();
+		    _assetLoader.background.setBounds(0.0f, 0.0f, screenWidth, screenHeight);
+			_assetLoader.background.draw(_spriteBatch);
+			_mainMenu.update();
 			for (Button btn: _mainMenu.buttons) {
 				renderButton(btn, _spriteBatch);
 			}
 			_spriteBatch.end();
 		}
+		if (_gameState == GameState.BALL_FALLING) {
+			_fallingDuration += _timeSnapshot.snapshot();
+			if (_fallingDuration >= FALLING_DURATION_TOTAL) {
+				_fallingDuration = 0;
+				_mainMenu.reset();
+				_gameState = GameState.MENU;
+			}
+		}
 	}
 	
 	public void checkGameEnd() {
 		if (wave.getBallX() < wave.getStartX()) {
-			restartGame();
+			_gameState = GameState.BALL_FALLING;
+			_timeSnapshot.snapshot();
+			_fallingDuration = 0;
 		}
 		boolean found = false;
 		int collidingIndex = 0;
 		for (CircleEntity enemy: counterWave._circles) {
 			if (enemy._type == Type.ENEMY && Intersector.overlaps(enemy.shape, wave.ballShape)) {
 				if (!wave._heroMode) {
-					restartGame();
+					_gameState = GameState.BALL_FALLING;
+					_timeSnapshot.snapshot();
+					_fallingDuration = 0;
 					return;
 				}
 			}
@@ -173,8 +196,9 @@ public class WaveBall extends ApplicationAdapter {
 		for (Rotator rotator: wave._rotators) {
 			if (rotator.checkCollision(wave.ballShape)) {
 				if (!wave._heroMode) {
-					restartGame();
-	//				collided = true;
+					_gameState = GameState.BALL_FALLING;
+					_timeSnapshot.snapshot();
+					_fallingDuration = 0;
 					return;
 				}
 				if (!found) {
@@ -209,7 +233,7 @@ public class WaveBall extends ApplicationAdapter {
 	
 	public void restartGame() {
 		wave = new MainWave(0.0f, _waveAmplitude, 2, camSpeedNormal, _ballSize, screenWidth * _ballPositionFraction,
-				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _assetLoader);
+				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _scoreBoard, _assetLoader);
 		counterWave = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
 				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation(), _assetLoader);
 		counterWave.setWaveEquation(wave.getWaveEquation());
@@ -228,6 +252,9 @@ public class WaveBall extends ApplicationAdapter {
 	}
 	
 	private void manageCameraTranslation() {
+		if (_gameState != GameState.PLAYING) {
+			return;
+		}
 		if ((float) ((int) wave.getBallX() - cameraX) / screenWidth >= _ballPositionFraction) {
 			_tmpVector.x = wave.getBallX() - cameraX - screenWidth * _ballPositionFraction;
 			_tmpVector.y = 0.0f;
@@ -238,92 +265,38 @@ public class WaveBall extends ApplicationAdapter {
 		}
 	}
 	
-	public void touchDown(InputHandler.UserInput input) {
-		wave.start();
+	public void touchDown(float x, float y) {
+		if (!_assetsLoaded) {
+			return;
+		}
+		if (_gameState == GameState.MENU) {
+			int id = _mainMenu.handleClick(x, y);
+			switch (id) {
+			case MainMenu.PLAY:
+				restartGame();
+				_gameState = GameState.PLAYING;
+				break;
+			}
+		} else if (_gameState == GameState.PLAYING) {
+			wave.start();
+		}
 	}
-	public void touchUp(InputHandler.UserInput input) {
-		wave.stop();
+	public void touchUp(float x, float y) {
+		if (!_assetsLoaded) {
+			return;
+		}
+		if (_gameState == GameState.MENU) {
+			
+		} else if (_gameState == GameState.PLAYING) {
+			wave.stop();
+		}
 	}
 	
 	private void renderButton(Button button, SpriteBatch spriteBatch) {
-//		Sprite buttonSprite;
-//		float width = button.boxWidth == 0.0f ? button.w : button.boxWidth;
-//		float height = button.h;
-//		width += button.paddingFractionX * width;
-//		float ratio = width / height;
-//		if (ratio < 2.0f) {
-//			buttonSprite = _assetLoader.button1;
-//		} else if (ratio < 6.0f) {
-//			buttonSprite = _assetLoader.button2;
-//		} else {
-//			buttonSprite = _assetLoader.button3;
-//		}
-//		buttonSprite.setColor(0.5f, 0.5f, 0.5f, 0.9f);
-//		buttonSprite.setRotation(0.0f);
-//		float centerX = button.x + button.w / 2;
-//		buttonSprite.setBounds(centerX - width * 0.5f, button.y - height * 1.4f, width, height * 1.8f);
-//		buttonSprite.draw(spriteBatch);
-//		button.font.setColor(0.0f, 0.0f, 0.0f, 0.9f);
-//		button.font.draw(spriteBatch, button.label, button.x, button.y);
+		float width = button.w;
+		float height = button.h;
+		
+		button.sprite.setBounds(button.x, button.y, width, height);
+		button.sprite.draw(spriteBatch);
 	}
-//	
-//    SpriteBatch batch;
-//    Texture img;
-//    Viewport vp;
-//   
-//    @Override
-//    public void create () {
-//            vp = new ExtendViewport(5, 5);
-//            batch = new SpriteBatch();
-//            img = new Texture("data/badlogic.jpg");
-//            Gdx.gl.glClearColor(1, 0, 0, 1);
-//    }
-//   
-//    @Override
-//    public void resize (int width, int height) {
-//            vp.update(width, height);
-//            batch.setProjectionMatrix(vp.getCamera().combined);
-//    }
-//
-//    float vertices[] = new float[5 * 4];
-//    float white = Color.WHITE.toFloatBits();
-//    @Override
-//    public void render () {
-//            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-//            batch.begin();
-//            float px = -2.5f, py = -2.5f;
-//            for (float s = 0; s < 1f; s+=0.01f) {
-//                    final float x = (s - 0.5f) * 5f;
-//                    final float y = 2.5f * MathUtils.sin(s * MathUtils.PI2);
-//                    vertices[Batch.X1] = px;
-//                    vertices[Batch.Y1] = py - 0.1f;
-//                    vertices[Batch.C1] = white;
-//                    vertices[Batch.U1] = 0f;
-//                    vertices[Batch.V1] = 1f;
-//                   
-//                    vertices[Batch.X2] = px;
-//                    vertices[Batch.Y2] = py + 0.1f;
-//                    vertices[Batch.C2] = white;
-//                    vertices[Batch.U2] = 0f;
-//                    vertices[Batch.V2] = 0f;
-//                   
-//                    vertices[Batch.X3] = x;
-//                    vertices[Batch.Y3] = y + 0.1f;
-//                    vertices[Batch.C3] = white;
-//                    vertices[Batch.U3] = 1f;
-//                    vertices[Batch.V3] = 1f;                       
-//                   
-//                    vertices[Batch.X4] = x;
-//                    vertices[Batch.Y4] = y - 0.1f;
-//                    vertices[Batch.C4] = white;
-//                    vertices[Batch.U4] = 1f;
-//                    vertices[Batch.V4] = 0f;
-//                   
-//                    batch.draw(img, vertices, 0, vertices.length);
-//                    px = x;
-//                    py = y;
-//            }
-//            batch.end();
-//    }
-//    
 }

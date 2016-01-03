@@ -13,7 +13,7 @@ import utils.Constants;
 import utils.TimeSnapshot;
 
 public class Rotator {
-	private float _angle;
+	public float _angle;
 	private float _speed;
 	private TimeSnapshot _timeSnapshot;
 	protected float _x;
@@ -33,10 +33,11 @@ public class Rotator {
 	private Color color = new Color(1.0f, 0.0f, 0.0f, 0.8f);
 	private Polygon shape1;
 	private Polygon shape2;
-	private float _baseAngle;
+	public float _baseAngle;
 	private float _angleOffset;
 	private boolean _easy;
-	public Rotator(float angle, float speed, float baseAngle, long pauseDuration,
+	
+	public Rotator(float angle, float speed, long pauseDuration,
 			float x, float y, float screenWidth, float screenHeight, float rotatorWidth,
 			boolean clockwise, boolean varyingSpeed, boolean easy, AssetLoader assetLoader) {
 		_angle = angle;

@@ -30,6 +30,7 @@ public class Wave {
 	private final long _plusOneTotalTime = 1000;
 	private float _plusOneX, _plusOneY;
 	protected TimeSnapshot _plusOneTimeSnapshot = new TimeSnapshot();
+	protected float _diamondRadius;
 	
 	public enum CircleType {
 		BALL,
@@ -52,6 +53,7 @@ public class Wave {
 		_screenHeight = screenHeight;
 		_color = color.toFloatBits();
 		_assetLoader = assetLoader;
+		_diamondRadius = _screenWidth / 50.0f;
 	}
 	public Float getStartX() {
 		return _startX;
@@ -277,8 +279,6 @@ public class Wave {
 			float size = _screenWidth / 25.0f * (0.3f + 0.7f * fraction);
 			_assetLoader.plusOne.setBounds(_tmpVector.x + _screenWidth / 2.0f, _tmpVector.y + _screenHeight / 2.0f, size,  size);
 			_assetLoader.plusOne.draw(batcher);
-			
-			System.out.println("plus one");
 		}
 	}
 	protected void update() {

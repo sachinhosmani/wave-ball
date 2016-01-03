@@ -55,13 +55,10 @@ public class AccelerationManager {
 			if (x - lastAccelerationChangeX > accelerationDelta) {
 				if (constantSpeed) {
 					// speeding up
-					if (Math.random() > 0.5) {
+					if (Math.random() > 0.8) {
 						constantSpeed = false;
 						acceleration = baseAcceleration;
 					}
-				} else {
-					// slowing down
-					acceleration = -acceleration;
 				}
 				lastAccelerationChangeX = x;
 				accelerationDelta = getAccelerationDelta();

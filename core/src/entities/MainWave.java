@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.wave.ball.WaveBall.GameState;
 
 import entities.CircleEntity.Type;
 import utils.Acceleration;
@@ -46,7 +47,6 @@ public class MainWave extends Wave {
 	private LinkedList<Float> _rotatorPositions;
 	private float _rotatorSpeed;
 	public ArrayList<CircleEntity> _diamonds;
-	private float _diamondRadius;
 	private float _lastAngle;
 	private float _lastSpeed;
 	private boolean _lastVaryingSpeed;
@@ -55,6 +55,7 @@ public class MainWave extends Wave {
 	public long _heroModeStartTime;
 	private long HERO_DURATION = 5000;
 	private boolean _heroAnim;
+	private ScoreBoard _scoreBoard;
 	
 	private TimeSnapshot _heroAnimTimeSnapshot = new TimeSnapshot();
 	private float _heroAnimX;
@@ -72,7 +73,7 @@ public class MainWave extends Wave {
 		return _waveEquation;
 	}
 	public MainWave(float phase, float amplitude, int frequency, float speed, float radius, float ballX,
-			float screenWidth, float screenHeight, Color color, AssetLoader assetLoader) {
+			float screenWidth, float screenHeight, Color color, ScoreBoard scoreBoard, AssetLoader assetLoader) {
 		super(phase, amplitude, speed, screenWidth, screenHeight, color, assetLoader);
 		_baseAngleDelta = 2 * ((float) Math.PI) / 700.0f;
 		_waveEquation = new WaveEquation(amplitude, _baseAngleDelta, screenWidth,
@@ -93,12 +94,12 @@ public class MainWave extends Wave {
 		_rotatorPositions = new LinkedList<Float>();
 		_rotatorSpeed = (float) Math.PI / 1300.0f;
 		_diamonds = new ArrayList<CircleEntity>();
-		_diamondRadius = _screenWidth / 50.0f;
 		_heroMode = false;
 		_heroModeStartTime = 0;
+		_scoreBoard = scoreBoard;
 	}
 
-	public void update(float cameraX) {
+	public void update(float cameraX, GameState gameState) {
 		super.update();
 		heroUpdate();
 		updateBallMaxSpeed();
@@ -120,9 +121,16 @@ public class MainWave extends Wave {
 			_rotatorPositions.remove(0);
 		}
 		_acceleration.update(timeElapsed);
-		increasePhase(timeElapsed * _acceleration.getSpeed() / 1000);
-		_waveEquation.get(_ballX, _tmpVector);
-		_ballY = _tmpVector.y;
+		if (gameState != GameState.BALL_FALLING) {
+			increasePhase(timeElapsed * _acceleration.getSpeed() / 1000);
+			_waveEquation.get(_ballX, _tmpVector);
+			_ballY = _tmpVector.y;
+		} else {
+			_ballY += _screenWidth / 100.0f * Math.sin(-Constants.rotation);
+			_ballX += _screenWidth / 100.0f * Math.cos(-Constants.rotation);
+			_radius = Math.max(0.0f, _radius / 1.1f);
+		}
+		
 		ballShape.x = _ballX;
 		ballShape.y = _ballY;
 		ballVector.x = _ballX;
@@ -131,9 +139,11 @@ public class MainWave extends Wave {
 			rotator.update();
 		}
 		tryRemoveRotator(cameraX);
-		rotatorWidth = Math.max(_screenWidth / 14.0f, rotatorWidth - _screenWidth / 220000.0f);
+//		rotatorWidth = Math.max(_screenWidth / 14.0f, rotatorWidth - _screenWidth / 220000.0f);
 //		camSpeedTrailing = Math.min(camSpeedTrailing + _screenWidth / 40000.0f, 1.5f * _screenWidth / 5.0f);
-		updateScore();
+		if (gameState == GameState.PLAYING) {
+			updateScore();
+		}
 //		_ballMaxSpeed = Math.min(_ballMaxSpeed + _screenWidth / 100000.0f, _screenWidth / 4.0f);
 		_ballMaxBoostedSpeed = _ballMaxSpeed * 1.3f;
 		
@@ -203,10 +213,10 @@ public class MainWave extends Wave {
 		if (_rotatorPositions.size() == 0) {
 			return;
 		}
-		if (_ballX > _rotatorPositions.get(0) + _screenWidth / 10.0f) {
-//			System.out.println(_rotatorPositions.size());
+		if (_ballX > _rotatorPositions.get(0) + _screenWidth / 30.0f) {
 			_score++;
 			_rotatorPositions.remove(0);
+			_scoreBoard.incrementScore();
 		}
 	}
 	
@@ -214,6 +224,10 @@ public class MainWave extends Wave {
 		super.render(renderer, cameraX, waveColor);
 		heroRender(renderer);
 		drawCircle(renderer, _ballX, _ballY, _radius, _heroMode ? CircleType.INVISIBLE : CircleType.BALL);
+//		if (_startX > _screenWidth / 100.0f) {
+//			_waveEquation.get(_startX, _tmpVector);
+//			drawCircle(renderer, _tmpVector.x, _tmpVector.y, _radius / 2.0f, CircleType.ENEMY);
+//		}
 		for (Rotator rotator: _rotators) {
 			rotator.render(renderer);
 		}
@@ -228,9 +242,6 @@ public class MainWave extends Wave {
 		moving = false;
 	}
 	private void addRotator(float x, boolean multiple) {
-		if (multiple && _lastMultiple) {
-//			System.out.println(_lastAngle - (float) Math.atan2(_tmpVector.y, _tmpVector.x));
-		}
 		_waveEquation.get(x, _tmpVector);
 		boolean clockwise = rotatorClockwise(x);
 		_lastRotatorClockwise = clockwise;
@@ -238,12 +249,19 @@ public class MainWave extends Wave {
 		_lastVaryingSpeed = alternating;
 		float y = _tmpVector.y;
 		_waveEquation.getDerivative(x, _tmpVector);
-		float angle = multiple ? _lastAngle : (float) Math.atan2(_tmpVector.y, _tmpVector.x);
+		float angle;
+		if (multiple && _lastMultiple && _rotators.size() > 0) {
+			
+			angle = (float) Math.atan2(_tmpVector.y, _tmpVector.x) + (_rotators.getLast()._angle - _rotators.getLast()._baseAngle);
+		} else {
+			angle = (float) Math.atan2(_tmpVector.y, _tmpVector.x);
+		}
 		_lastAngle = angle;
 		float rotatorSpeed = getRotatorSpeed(x, multiple);
 		_lastSpeed = rotatorSpeed;
-		_rotators.add(new Rotator(angle, rotatorSpeed, normalizeAngle(0.0f + (float) Math.PI / 2.0f),
-				0, x, y, _screenWidth, _screenHeight, rotatorWidth, clockwise, alternating, rotatorEasy(multiple), _assetLoader));
+		Rotator rotator = new Rotator(angle, rotatorSpeed,
+				0, x, y, _screenWidth, _screenHeight, rotatorWidth, clockwise, alternating, rotatorEasy(multiple), _assetLoader);
+		_rotators.add(rotator);
 		_lastRotatorLaunchX = x;
 		_lastMultiple = multiple;
 	}
@@ -291,7 +309,6 @@ public class MainWave extends Wave {
 			return false;
 		}
 		if (_phaseClassifier.getPhase(_ballX) <= 1) {
-//			System.out.println("easy");
 			return true;
 		}
 		return false;
@@ -330,8 +347,6 @@ public class MainWave extends Wave {
 			float size = _screenWidth / 25.0f * (0.3f + 0.7f * fraction);
 			_assetLoader.hero.setBounds(_tmpVector.x + _screenWidth / 2.0f, _tmpVector.y + _screenHeight / 2.0f, size,  size);
 			_assetLoader.hero.draw(batcher);
-			
-			System.out.println("hero");
 		}
 	}
 }

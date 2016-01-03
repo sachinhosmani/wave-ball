@@ -20,16 +20,16 @@ public class InputHandler implements InputProcessor {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-    	_game.touchDown(UserInput.RIGHT);
+    	_game.touchDown(screenX, screenY);
         return true;
     }
 
     @Override
     public boolean keyDown(int keycode) {
     	if (keycode == Input.Keys.LEFT) {
-    		_game.touchDown(UserInput.LEFT);
+    		_game.touchDown(0, 0);
     	} else if (keycode == Input.Keys.RIGHT) {
-    		_game.touchDown(UserInput.RIGHT);
+    		_game.touchDown(0, 0);
     	}
         return true;
     }
@@ -37,10 +37,10 @@ public class InputHandler implements InputProcessor {
     @Override
     public boolean keyUp(int keycode) {
     	if (keycode == Input.Keys.LEFT) {
-    		_game.touchUp(UserInput.LEFT);
+    		_game.touchUp(0, 0);
     	}
     	if (keycode == Input.Keys.RIGHT) {
-    		_game.touchUp(UserInput.RIGHT);
+    		_game.touchUp(0, 0);
     	}
     	return true;
     }
@@ -52,7 +52,7 @@ public class InputHandler implements InputProcessor {
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-    	_game.touchUp(UserInput.RIGHT);
+    	_game.touchUp(screenX, screenY);
     	return true;
     }
 

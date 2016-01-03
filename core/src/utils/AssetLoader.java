@@ -34,6 +34,9 @@ public class AssetLoader {
 	public Sprite background;
 	public Sprite plusOne;
 	
+	public Sprite play;
+	public Sprite title;
+	
 	public int fontSize1, fontSize2, fontSize3, fontSize4;
 	public float screenWidth, screenHeight;
 	public int SMALL_FONT = 0;
@@ -67,11 +70,12 @@ public class AssetLoader {
 		manager.load("star.png", Texture.class);
 		manager.load("background.png", Texture.class);
 		manager.load("+1.png", Texture.class);
+		manager.load("play8.png", Texture.class);
+		manager.load("title1.png", Texture.class);
 		loadFonts();
 	}
 
 	public void assignAssets() {
-		
 		ball = new Sprite(manager.get("ball.png", Texture.class));
 		diamond = new Sprite(manager.get("diamond.png", Texture.class));
 		hero = new Sprite(manager.get("star.png", Texture.class));
@@ -82,6 +86,9 @@ public class AssetLoader {
 		wave2 = new Sprite(manager.get("line2.png", Texture.class));
 		shadow = new Sprite(manager.get("shadow.png", Texture.class));
 		plusOne = new Sprite(manager.get("+1.png", Texture.class));
+		play = new Sprite(manager.get("play8.png", Texture.class));
+		title = new Sprite(manager.get("title1.png", Texture.class));
+		
 		shadow.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 	
 		ubuntuFont[SMALL_FONT] = manager.get("ubuntu1.ttf", BitmapFont.class);

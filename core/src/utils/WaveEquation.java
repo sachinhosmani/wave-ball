@@ -91,7 +91,7 @@ public class WaveEquation {
 //				lastAngle = angle;
 //			}
 			if (first && !second && Math.abs(x - lastRotatorX - screenWidth / 7.0f) < screenWidth / 50.0f &&
-					phaseClassifier.getPhase(x) >= 2 &&
+					phaseClassifier.getPhase(x) >= 3 &&
 					Math.abs(lastAngle - angle) < maxAngleDiff) {
 				rotatorPositions.add(0, x);
 				rotatorMultiple.remove(0);
@@ -117,14 +117,25 @@ public class WaveEquation {
 			angle += angleDelta;
 			maxAngleDiff += granularity / size * 0.3f;
 		}
+		float lastDiamondPosition = 0.0f;
+		float lastHeroPosition = 0.0f;
 		for (i = 0; i < rotatorPositions.size() - 1; i++) {
 			float pos1 = rotatorPositions.get(i);
 			float pos2 = rotatorPositions.get(i + 1);
-			if (pos1 - pos2 > screenWidth / 5.0f && Math.random() > 0.5) {
-				if (Math.random() > 0.1) {
-					diamondPositions.add((pos1 + pos2) / 2 + MathUtils.random(-0.3f, 0.3f) * (pos1 - pos2));
-				} else {
-					heroPositions.add((pos1 + pos2) / 2 + MathUtils.random(-0.3f, 0.3f) * (pos1 - pos2));
+			if (pos1 - pos2 > screenWidth / 5.0f && Math.random() > 0.3) {
+				float pos = (pos1 + pos2) / 2 + MathUtils.random(-0.3f, 0.3f) * (pos1 - pos2);
+				if (Math.random() > 0.6) {
+					if (Math.random() > 0.15) {
+						if (Math.abs(pos - lastDiamondPosition) > screenWidth) {
+							diamondPositions.add(pos);
+							lastDiamondPosition = (pos1 + pos2) / 2;
+						}
+					} else {
+						if (Math.abs(pos - lastHeroPosition) > 2 * screenWidth) {
+							heroPositions.add((pos1 + pos2) / 2 + MathUtils.random(-0.3f, 0.3f) * (pos1 - pos2));
+							lastHeroPosition = (pos1 + pos2) / 2;
+						}
+					}
 				}
 			}
 		}

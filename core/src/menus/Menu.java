@@ -25,8 +25,8 @@ public class Menu {
 		buttons.add(btn);
 		return btn;
 	}
-	public Button addButton(float x, float y, float w, float h, Sprite sprite, Color c, String label, int id, BitmapFont font, float baseWidth) {
-		Button btn = new Button(x, y, w, h, sprite, label, c, id, font, baseWidth);
+	public Button addButton(float x, float y, float w, float h, Sprite sprite, int id) {
+		Button btn = new Button(x, y, w, h, sprite, id);
 		buttons.add(btn);
 		return btn;
 	}

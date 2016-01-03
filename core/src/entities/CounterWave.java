@@ -27,7 +27,7 @@ public class CounterWave extends Wave {
 			float ballX, float screenWidth, float screenHeight, Color color, WaveEquation waveEquation, AssetLoader assetLoader) {
 		super(phase, amplitude, speed, screenWidth, screenHeight, color, assetLoader);
 		_radius = radius;
-		_enemyFrequency = screenWidth / 2.8f;
+		_enemyFrequency = screenWidth / 2.4f;
 		_enemyRadius = _screenWidth / 80.0f;
 		_accelerationManager = new AccelerationManager(screenWidth, screenHeight,
 				screenWidth / 40.0f, screenWidth / 2.2f, screenWidth / 1.6f, screenWidth / 2.0f, waveEquation);
@@ -76,7 +76,7 @@ public class CounterWave extends Wave {
 	public void render(SpriteBatch renderer, float cameraX) {
 		super.render(renderer, cameraX, true, waveColor);
 		for (CircleEntity enemy: _circles) {
-			drawCircle(renderer, enemy._x, enemy._y, _enemyRadius, enemy._type == Type.DIAMOND ? CircleType.DIAMOND : CircleType.ENEMY);
+			drawCircle(renderer, enemy._x, enemy._y, enemy._type == Type.DIAMOND ? _diamondRadius : _enemyRadius, enemy._type == Type.DIAMOND ? CircleType.DIAMOND : CircleType.ENEMY);
 		}
 	}
 }

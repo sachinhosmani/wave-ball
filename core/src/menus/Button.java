@@ -51,6 +51,19 @@ public class Button {
 		this.paddingFractionX = paddingFractionX;
 		this.baseWidth = baseWidth;
 	}
+	public Button(float x, float y, float w, float h, Sprite sprite, int id) {
+		this.x = x;
+		this.y = y;
+		this.w = w;
+		this.h = h;
+		isTexture = true;
+		this.label = "";
+		this.sprite = sprite;
+		this.id = id;
+		this.font = null;
+		this.color = null;
+		this.baseWidth = w;
+	}
 	public Button(float x, float y, float w, float h, Sprite sprite, String label, Color c, int id, BitmapFont font, float baseWidth) {
 		this.x = x;
 		this.y = y;
