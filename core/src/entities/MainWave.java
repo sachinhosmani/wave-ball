@@ -16,6 +16,7 @@ import utils.AssetLoader;
 import utils.Constants;
 import utils.PhaseClassifier;
 import utils.TimeSnapshot;
+import utils.TimeSnapshotStore;
 import utils.WaveEquation;
 
 public class MainWave extends Wave {
@@ -57,7 +58,7 @@ public class MainWave extends Wave {
 	private boolean _heroAnim;
 	private ScoreBoard _scoreBoard;
 	
-	private TimeSnapshot _heroAnimTimeSnapshot = new TimeSnapshot();
+	private TimeSnapshot _heroAnimTimeSnapshot = TimeSnapshotStore.get();
 	private float _heroAnimX;
 	private float _heroAnimY;
 	private long _heroAnimTime;
@@ -85,7 +86,7 @@ public class MainWave extends Wave {
 		helperBallShape = new Circle(0.0f, 0.0f, _radius);
 		_startX = 0.0f;
 		camSpeedTrailing = (float) screenWidth / 6.0f;
-		rotatorWidth = _screenWidth / 11.95f;
+		rotatorWidth = _screenWidth / 10.0f;
 		_phaseClassifier = new PhaseClassifier(screenWidth);
 		_ballMaxSpeed = speed;
 		_ballMaxBoostedSpeed = speed * 1.5f;
@@ -199,7 +200,9 @@ public class MainWave extends Wave {
 	
 	public void incrementPoints(int increment) {
 		_points += increment;
+		_score += increment;
 	}
+	
 	protected void increasePhase(float delta) {
 		_waveEquation.getDerivative(_ballX, _tmpVector);
 		_ballX += delta / _tmpVector.len() * _screenWidth / 500.0f;
@@ -219,7 +222,7 @@ public class MainWave extends Wave {
 			_scoreBoard.incrementScore();
 		}
 	}
-	
+
 	public void render(SpriteBatch renderer, float cameraX) {
 		super.render(renderer, cameraX, waveColor);
 		heroRender(renderer);

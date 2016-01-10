@@ -1,7 +1,7 @@
 package utils;
 
 public class ScoreManager {
-	private TimeSnapshot _timeSnapshot = new TimeSnapshot();
+	private TimeSnapshot _timeSnapshot = TimeSnapshotStore.get();
 	private long _score = 0;
 	public void update() {
 		long timeElapsed = _timeSnapshot.snapshot();

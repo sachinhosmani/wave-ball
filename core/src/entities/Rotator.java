@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Vector2;
 import utils.AssetLoader;
 import utils.Constants;
 import utils.TimeSnapshot;
+import utils.TimeSnapshotStore;
 
 public class Rotator {
 	public float _angle;
@@ -36,6 +37,7 @@ public class Rotator {
 	public float _baseAngle;
 	private float _angleOffset;
 	private boolean _easy;
+	private float _rotatorGirth;
 	
 	public Rotator(float angle, float speed, long pauseDuration,
 			float x, float y, float screenWidth, float screenHeight, float rotatorWidth,
@@ -43,12 +45,13 @@ public class Rotator {
 		_angle = angle;
 		_baseAngle = _angle;
 		_speed = speed;
-		_timeSnapshot = new TimeSnapshot();
+		_timeSnapshot = TimeSnapshotStore.get();
 		_x = x;
 		_y = y;
 		_screenWidth = screenWidth;
 		_screenHeight = screenHeight;
-		float rotatorLength = _screenWidth / 25.0f;
+		float rotatorLength = _screenWidth / 22.0f;
+		_rotatorGirth = rotatorLength / 2.6666f;
 		point1 = new Vector2(-rotatorLength / 2.0f, -rotatorWidth / 2.0f);
 		point2 = new Vector2(rotatorLength / 2.0f, -rotatorWidth / 2.0f);
 		point3 = new Vector2(-rotatorLength / 2.0f, rotatorWidth / 2.0f);
@@ -114,8 +117,8 @@ public class Rotator {
 		point3.rotateRad(_angle);
 		point4.rotateRad(_angle);
 		
-		drawLine(renderer, _x + point1.x, _y + point1.y, _x + point2.x, _y + point2.y, _screenWidth / 25.0f / 2.6666f, color, shape1);
-		drawLine(renderer, _x + point3.x, _y + point3.y, _x + point4.x, _y + point4.y, _screenWidth / 25.0f / 2.6666f, color, shape2);
+		drawLine(renderer, _x + point1.x, _y + point1.y, _x + point2.x, _y + point2.y, _rotatorGirth, color, shape1);
+		drawLine(renderer, _x + point3.x, _y + point3.y, _x + point4.x, _y + point4.y, _rotatorGirth, color, shape2);
 		
 		point1.rotateRad(-_angle);
 		point2.rotateRad(-_angle);

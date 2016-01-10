@@ -20,7 +20,7 @@ public class InputHandler implements InputProcessor {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-    	_game.touchDown(screenX, screenY);
+    	_game.touchDown(screenX, _screenHeight - screenY);
         return true;
     }
 

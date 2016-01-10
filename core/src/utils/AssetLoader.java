@@ -36,6 +36,8 @@ public class AssetLoader {
 	
 	public Sprite play;
 	public Sprite title;
+	public Sprite share;
+	public Sprite rate;
 	
 	public int fontSize1, fontSize2, fontSize3, fontSize4;
 	public float screenWidth, screenHeight;
@@ -72,6 +74,8 @@ public class AssetLoader {
 		manager.load("+1.png", Texture.class);
 		manager.load("play8.png", Texture.class);
 		manager.load("title1.png", Texture.class);
+		manager.load("share.png", Texture.class);
+		manager.load("rate.png", Texture.class);
 		loadFonts();
 	}
 
@@ -88,6 +92,8 @@ public class AssetLoader {
 		plusOne = new Sprite(manager.get("+1.png", Texture.class));
 		play = new Sprite(manager.get("play8.png", Texture.class));
 		title = new Sprite(manager.get("title1.png", Texture.class));
+		share = new Sprite(manager.get("share.png", Texture.class));
+		rate = new Sprite(manager.get("rate.png", Texture.class));
 		
 		shadow.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 	

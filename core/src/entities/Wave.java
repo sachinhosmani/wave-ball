@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.Vector2;
 import utils.AssetLoader;
 import utils.Constants;
 import utils.TimeSnapshot;
+import utils.TimeSnapshotStore;
 import utils.WaveEquation;
 
 public class Wave {
@@ -15,7 +16,7 @@ public class Wave {
 	protected float _amplitude;
 	protected float _speed;
 	protected static int numComponentsPerWave = 50;
-	protected TimeSnapshot _timeSnapshot = new TimeSnapshot();
+	protected TimeSnapshot _timeSnapshot = TimeSnapshotStore.get();
 	protected float _screenWidth;
 	protected float _screenHeight;
 	protected WaveEquation _waveEquation;
@@ -29,7 +30,7 @@ public class Wave {
 	private long _plusOneTime;
 	private final long _plusOneTotalTime = 1000;
 	private float _plusOneX, _plusOneY;
-	protected TimeSnapshot _plusOneTimeSnapshot = new TimeSnapshot();
+	protected TimeSnapshot _plusOneTimeSnapshot = TimeSnapshotStore.get();
 	protected float _diamondRadius;
 	
 	public enum CircleType {

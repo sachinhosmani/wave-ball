@@ -10,25 +10,24 @@ import entities.Wave.CircleType;
 import utils.AccelerationManager;
 import utils.AssetLoader;
 import utils.TimeSnapshot;
+import utils.TimeSnapshotStore;
 import utils.WaveEquation;
 
 public class CounterWave extends Wave {
 	public LinkedList<CircleEntity> _circles = new LinkedList<CircleEntity>();
-	protected float _radius;
 	protected float _lastEnemyLaunchX = 0.0f;
 	private float _enemyFrequency;
 	private static final Color _enemyColor = new Color(1.0f, 0.0f, 0.0f, 0.9f);
 	private static final Color _diamondColor = new Color(1.0f, 0.7f, 0.0f, 0.9f);
 	private AccelerationManager _accelerationManager;
-	private TimeSnapshot _timeSnapshot = new TimeSnapshot();
+	private TimeSnapshot _timeSnapshot = TimeSnapshotStore.get();
 	private float _enemyRadius;
 	private static Color waveColor = new Color(1.0f, 0.2f, 0.3f, 0.5f);
 	public CounterWave(float phase, float amplitude, float speed, float radius,
 			float ballX, float screenWidth, float screenHeight, Color color, WaveEquation waveEquation, AssetLoader assetLoader) {
 		super(phase, amplitude, speed, screenWidth, screenHeight, color, assetLoader);
-		_radius = radius;
 		_enemyFrequency = screenWidth / 2.4f;
-		_enemyRadius = _screenWidth / 80.0f;
+		_enemyRadius = radius;
 		_accelerationManager = new AccelerationManager(screenWidth, screenHeight,
 				screenWidth / 40.0f, screenWidth / 2.2f, screenWidth / 1.6f, screenWidth / 2.0f, waveEquation);
 	}
@@ -53,7 +52,7 @@ public class CounterWave extends Wave {
 		}
 		tryRemoveEnemyOrDiamond(cameraX);
 		
-		_enemyFrequency = Math.max(_enemyFrequency - _screenWidth / 50000.0f, _screenWidth / 3.0f); 
+		_enemyFrequency = Math.max(_enemyFrequency - cameraX / 100 * _screenWidth * _screenWidth / 100.0f, _screenWidth / 3.0f); 
 	}
 	private void tryAddEnemyOrDiamond(float cameraX) {
 		if ((cameraX > _screenWidth * 0.7f) && (_circles.size() == 0 || _circles.get(_circles.size() - 1)._x - cameraX > _enemyFrequency)) {

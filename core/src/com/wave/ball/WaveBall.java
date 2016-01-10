@@ -1,31 +1,37 @@
 package com.wave.ball;
 
+import java.util.HashMap;
+
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector2;
 
+import cross.CrossRate;
+import cross.CrossShare;
 import entities.CircleEntity;
+import entities.CircleEntity.Type;
 import entities.CounterWave;
 import entities.MainWave;
 import entities.Rotator;
 import entities.ScoreBoard;
-import entities.CircleEntity.Type;
 import menus.Button;
 import menus.MainMenu;
+import menus.Menu;
+import menus.ScoreMenu;
 import utils.AccelerationManager;
 import utils.AssetLoader;
 import utils.Constants;
 import utils.InputHandler;
 import utils.PreferenceManager;
 import utils.TimeSnapshot;
+import utils.TimeSnapshotStore;
 import utils.WaveEquation;
 
 public class WaveBall extends ApplicationAdapter {
@@ -44,7 +50,7 @@ public class WaveBall extends ApplicationAdapter {
 	private final long FALLING_DURATION_TOTAL = 1000;
 	private long _fallingDuration = 0;
 	
-	private TimeSnapshot _timeSnapshot = new TimeSnapshot();
+	private TimeSnapshot _timeSnapshot = TimeSnapshotStore.get();
 	private float _ballSize;
 	private float _enemySize;
 	private float _waveAmplitude;
@@ -58,13 +64,24 @@ public class WaveBall extends ApplicationAdapter {
 	private SpriteBatch _spriteBatch;
 	boolean collided = false;
 	public enum GameState {
-		PLAYING, MENU, BALL_FALLING
+		PLAYING, MENU, BALL_FALLING, SCORE_MENU
 	};
 	private GameState _gameState = GameState.MENU;
 	private MainMenu _mainMenu;
+	private ScoreMenu _scoreMenu;
 	private PreferenceManager _prefManager;
+	private HashMap<GameState, Menu> _stateToMenu = new HashMap<GameState, Menu>();
+	
+	private CrossRate _rate;
+	private CrossShare _share;
+	public WaveBall(CrossRate rate, CrossShare share) {
+		_rate = rate;
+		_share = share;
+	}
+	
 	@Override
 	public void create() {
+		TimeSnapshotStore.clear();
 		screenWidth = Gdx.graphics.getWidth();
 		screenHeight = Gdx.graphics.getHeight();
 		cam = new OrthographicCamera();
@@ -75,9 +92,9 @@ public class WaveBall extends ApplicationAdapter {
 		_spriteBatch.setProjectionMatrix(cam.combined);
 		camSpeedNormal = (float) screenWidth / 4.25f;
 		
-		_ballSize = screenWidth / 52.0f;
+		_ballSize = screenWidth / 40.0f;
 		_waveAmplitude = screenWidth / 12.0f;
-		_enemySize = screenWidth / 100.0f;
+		_enemySize = screenWidth / 60.0f;
 		_counterWaveAmplitude = screenWidth / 18.0f;
 
 		_assetLoader = new AssetLoader();
@@ -96,19 +113,20 @@ public class WaveBall extends ApplicationAdapter {
 		
 		_tmpVector = new Vector2();
 		_prefManager = new PreferenceManager();
+		
 	}
 
 	@Override
 	public void render() {
 		logger.log();
-		if (collided) {
-			return;
-		}
 		if (!_assetsLoaded) {
 			if (_assetLoader.update()) {
 				_assetsLoaded = true;
 				_assetLoader.assignAssets();
 				_mainMenu = new MainMenu(screenWidth, screenHeight, _assetLoader);
+				_scoreMenu = new ScoreMenu(screenWidth, screenHeight, _assetLoader);
+				_stateToMenu.put(GameState.MENU, _mainMenu);
+				_stateToMenu.put(GameState.SCORE_MENU, _scoreMenu);
 				System.out.println("loaded");
 			}
 			return;
@@ -137,7 +155,7 @@ public class WaveBall extends ApplicationAdapter {
 			_scoreBoard.render(_spriteBatch, cameraX, wave.getScore());
 			_spriteBatch.end();
 			Gdx.gl.glDisable(GL20.GL_BLEND);
-		} else if (_gameState == GameState.MENU) {
+		} else {
 			Gdx.gl.glClearColor(0.9f, 0.9f, 0.9f, 1);
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT | (Gdx.graphics.getBufferFormat().coverageSampling ? GL20.GL_COVERAGE_BUFFER_BIT_NV : 0));
 			Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -146,22 +164,25 @@ public class WaveBall extends ApplicationAdapter {
 			_spriteBatch.begin();
 		    _assetLoader.background.setBounds(0.0f, 0.0f, screenWidth, screenHeight);
 			_assetLoader.background.draw(_spriteBatch);
-			_mainMenu.update();
-			for (Button btn: _mainMenu.buttons) {
+			Menu menu = _stateToMenu.get(_gameState);
+			menu.update();
+			for (Button btn: menu.buttons) {
 				renderButton(btn, _spriteBatch);
 			}
 			_spriteBatch.end();
 		}
+		
 		if (_gameState == GameState.BALL_FALLING) {
 			_fallingDuration += _timeSnapshot.snapshot();
 			if (_fallingDuration >= FALLING_DURATION_TOTAL) {
 				_fallingDuration = 0;
-				_mainMenu.reset();
-				_gameState = GameState.MENU;
+				storeScores();
+				_scoreMenu.reset(wave.getScore(), (int) _prefManager.getMaxScore());
+				_gameState = GameState.SCORE_MENU;
 			}
 		}
 	}
-	
+
 	public void checkGameEnd() {
 		if (wave.getBallX() < wave.getStartX()) {
 			_gameState = GameState.BALL_FALLING;
@@ -249,6 +270,7 @@ public class WaveBall extends ApplicationAdapter {
 		if (_prefManager.getMaxScore() < wave.getScore()) {
 			_prefManager.setMaxScore(wave.getScore());
 		}
+		_prefManager.setPoints(_prefManager.getPoints() + 1);
 	}
 	
 	private void manageCameraTranslation() {
@@ -269,16 +291,35 @@ public class WaveBall extends ApplicationAdapter {
 		if (!_assetsLoaded) {
 			return;
 		}
+		if (_gameState == GameState.PLAYING) {
+			wave.start();
+			return;
+		}
+		if (_gameState == GameState.BALL_FALLING) {
+			return;
+		}
+		Menu menu = _stateToMenu.get(_gameState);
+		int id = menu.handleClick(x, y);
 		if (_gameState == GameState.MENU) {
-			int id = _mainMenu.handleClick(x, y);
 			switch (id) {
 			case MainMenu.PLAY:
 				restartGame();
 				_gameState = GameState.PLAYING;
 				break;
 			}
-		} else if (_gameState == GameState.PLAYING) {
-			wave.start();
+		} else if (_gameState == GameState.SCORE_MENU) {
+			switch (id) {
+			case ScoreMenu.PLAY:
+				restartGame();
+				_gameState = GameState.PLAYING;
+				break;
+			case ScoreMenu.RATE:
+				_rate.rate();
+				break;
+			case ScoreMenu.SHARE:
+				_share.share(wave.getScore());
+				break;
+			}
 		}
 	}
 	public void touchUp(float x, float y) {
@@ -296,7 +337,19 @@ public class WaveBall extends ApplicationAdapter {
 		float width = button.w;
 		float height = button.h;
 		
-		button.sprite.setBounds(button.x, button.y, width, height);
-		button.sprite.draw(spriteBatch);
+		if (button.isTexture) {
+			button.sprite.setOriginCenter();
+			button.sprite.setRotation(button.angle);
+			button.sprite.setBounds(button.x, button.y, width, height);
+			button.sprite.draw(spriteBatch);
+		} else {
+			button.font.setColor(button.color);
+			button.font.draw(spriteBatch, button.label, button.x, button.y);
+		}
+	}
+
+	@Override
+	public void resume() {
+		TimeSnapshotStore.resume();
 	}
 }

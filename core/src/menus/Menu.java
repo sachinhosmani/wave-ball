@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 
 public class Menu {
 	public ArrayList<Button> buttons;
@@ -15,23 +15,18 @@ public class Menu {
 		this._screenWidth = screenWidth;
 		this._screenHeight = screenHeight;
 	}
-	public Button addButton(float x, float y, Color c, String label, int id, BitmapFont font, float f, float baseWidth) {
-		Button btn = new Button(x, y, label, c, id, font, f, baseWidth);
+	public Button addButton(Vector2 pos, Color c, String label, int id, BitmapFont font, float f) {
+		Button btn = new Button(_screenWidth * pos.x, _screenHeight * pos.y, label, c, id, font, f);
 		buttons.add(btn);
 		return btn;
 	}
-	public Button addButton(float x, float y, Color c, String label, int id, BitmapFont font, float f, float baseWidth, float w) {
-		Button btn = new Button(x, y, label, c, id, font, f, baseWidth, w);
+	public Button addButton(Vector2 pos, float w, float h, Sprite sprite, int id) {
+		Button btn = new Button(_screenWidth * pos.x - w / 2, _screenHeight * pos.y - _screenWidth * h / 2, _screenWidth * w, _screenWidth * h, sprite, id);
 		buttons.add(btn);
 		return btn;
 	}
-	public Button addButton(float x, float y, float w, float h, Sprite sprite, int id) {
-		Button btn = new Button(x, y, w, h, sprite, id);
-		buttons.add(btn);
-		return btn;
-	}
-	public Button addText(float x, float y, String label, Color c, BitmapFont font, float baseWidth) {
-		Button btn = new Button(x, y, label, c, 0, font, 0.0f, baseWidth);
+	public Button addText(Vector2 pos, String label, Color c, BitmapFont font) {
+		Button btn = new Button(_screenWidth * pos.x, _screenHeight * pos.y, label, c, 0, font, 0.0f);
 		btn.noAction = true;
 		buttons.add(btn);
 		return btn;
@@ -47,5 +42,18 @@ public class Menu {
 	public int handleClick(float baseX, float baseY) {
 		int id = findIDForClick(baseX, baseY);
 		return id;
+	}
+	public void update() {
+		
+	}
+	public void setButtonPosition(Button btn, float x, float y) {
+		btn.centerX = _screenWidth * x;
+		btn.y = _screenHeight * y;
+		btn.centerY = y;
+		if (!btn.isTexture) {
+			btn.x = btn.x - btn.w / 2.0f;
+		} else {
+			btn.x = x;
+		}
 	}
 }

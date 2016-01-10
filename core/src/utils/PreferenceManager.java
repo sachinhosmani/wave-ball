@@ -46,15 +46,17 @@ public class PreferenceManager {
 	}
 
 	public long getPoints() {
-		return prefs.getLong("points");
+		return prefs.getLong("points", 0);
 	}
 	public long getMaxScore() {
-		return prefs.getLong("max_score");
+		return prefs.getLong("max_score", 0);
 	}
 	public void setPoints(long val) {
 		prefs.putLong("points", val);
+		prefs.flush();
 	}
 	public void setMaxScore(long val) {
 		prefs.putLong("max_score", val);
+		prefs.flush();
 	}
 }
