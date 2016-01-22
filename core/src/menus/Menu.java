@@ -21,7 +21,7 @@ public class Menu {
 		return btn;
 	}
 	public Button addButton(Vector2 pos, float w, float h, Sprite sprite, int id) {
-		Button btn = new Button(_screenWidth * pos.x - w / 2, _screenHeight * pos.y - _screenWidth * h / 2, _screenWidth * w, _screenWidth * h, sprite, id);
+		Button btn = new Button(_screenWidth * pos.x, _screenHeight * pos.y, _screenWidth * w, _screenWidth * h, sprite, id);
 		buttons.add(btn);
 		return btn;
 	}

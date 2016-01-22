@@ -35,6 +35,12 @@ public class ScoreMenu extends Menu {
 	private Vector2 scoreTextPositionEnd = new Vector2();
 	private Vector2 maxScoreTextPositionStart = new Vector2();
 	private Vector2 maxScoreTextPositionEnd = new Vector2();
+	private Vector2 diamondsPositionStart = new Vector2();
+	private Vector2 diamondsPositionEnd = new Vector2();
+	private Vector2 diamondsTextPositionStart = new Vector2();
+	private Vector2 diamondsTextPositionEnd = new Vector2();
+	
+	private Button diamondsText, diamonds;
 	
 	private Button playButton, titleButton, shareButton, rateButton;
 	private Button scoreButton, maxScoreButton;
@@ -49,7 +55,11 @@ public class ScoreMenu extends Menu {
 	private String scoreText = "score";
 	private String maxScoreText = "max score";
 	private Color scoreColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
+	private float diamondsButtonWidth;
+	private Color diamondTextColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
 	private ArrayList<ButtonAnimation> _animations = new ArrayList<ButtonAnimation>();
+	
+	private int _numDiamonds = 0;
 	public ScoreMenu(float screenWidth, float screenHeight, AssetLoader assetLoader) {
 		super(screenWidth, screenHeight);
 		
@@ -57,6 +67,7 @@ public class ScoreMenu extends Menu {
 		titleHeight = titleWidth * 61.0f / 275.0f;
 		
 		playButtonWidth = 1 / 9.0f;
+		diamondsButtonWidth = 1 / 20.0f;
 		
 		shareButtonWidth = 1 / 10.0f;
 		rateButtonWidth = 1 / 10.0f;
@@ -109,6 +120,18 @@ public class ScoreMenu extends Menu {
 		ratePositionEnd.x = 0.2f;
 		ratePositionEnd.y = ratePositionStart.y;
 		
+		diamondsPositionEnd.x = diamondsButtonWidth * 0.5f + 0.01f;
+		diamondsPositionEnd.y = 0.95f;
+		
+		diamondsPositionStart.x = diamondsPositionEnd.x;
+		diamondsPositionStart.y = diamondsPositionEnd.y;
+		
+		diamondsTextPositionEnd.x = diamondsPositionEnd.x + 0.1f;
+		diamondsTextPositionEnd.y = 0.95f;
+		
+		diamondsTextPositionStart.x = diamondsTextPositionEnd.x;
+		diamondsTextPositionStart.y = diamondsTextPositionEnd.y;
+		
 		titleButton = addButton(titlePositionStart, titleWidth, titleHeight, assetLoader.title, 0);
 		playButton = addButton(playPositionStart, playButtonWidth, playButtonWidth, assetLoader.play, PLAY);
 		shareButton = addButton(sharePositionStart, shareButtonWidth, shareButtonWidth, assetLoader.share, SHARE);
@@ -119,6 +142,9 @@ public class ScoreMenu extends Menu {
 		
 		scoreTextButton = addText(scoreTextPositionStart, scoreText, scoreColor, assetLoader.ubuntuFont[assetLoader.SMALL_FONT]);
 		maxScoreTextButton = addText(maxScoreTextPositionStart, maxScoreText, scoreColor, assetLoader.ubuntuFont[assetLoader.SMALL_FONT]);
+		
+		diamonds = addButton(diamondsPositionStart, diamondsButtonWidth, diamondsButtonWidth, assetLoader.diamond, 0);
+		diamondsText = addText(diamondsTextPositionStart, _numDiamonds + "", diamondTextColor, assetLoader.ubuntuFont[assetLoader.SMALL_FONT]);
 		
 		_animations.add(new ButtonLinearAnimation(titleButton, titlePositionStart, titlePositionEnd, 500, screenWidth, screenHeight));
 		_animations.add(new ButtonLinearAnimation(playButton, playPositionStart, playPositionEnd, 500, screenWidth, screenHeight));
@@ -142,9 +168,11 @@ public class ScoreMenu extends Menu {
 			animation.reset();
 		}
 	}
-	public void reset(int score, int maxScore) {
+	public void reset(int score, int maxScore, int numDiamonds) {
 		scoreButton.changeLabel(score + "");
 		maxScoreButton.changeLabel(maxScore + "");
+		_numDiamonds = numDiamonds;
+		diamondsText.changeLabel(_numDiamonds + "");
 		reset();
 	}
 }

@@ -50,13 +50,13 @@ public class AssetLoader {
 	public BitmapFont[] gocaFont = new BitmapFont[4];
 	public BitmapFont[] goodFont = new BitmapFont[4];
 
-	public TextureRegion[] unsafeCircle = new TextureRegion[11];
-	public Animation unsafeCircleAnimation;
-	public TextureRegion[] unsafeRectangle = new TextureRegion[20];
-	public Animation unsafeRectangleAnimation;
+	public TextureRegion[] diamonds = new TextureRegion[7];
+	public Animation diamondAnimation;
 	public BitmapFont splashFont;
 	
 	public I18NBundle i18nBundle;
+	
+	public float backgroundWidth, backgroundHeight;
 	
 	public void load(float screenWidth, float screenHeight) {
 		this.screenWidth = screenWidth;
@@ -64,39 +64,70 @@ public class AssetLoader {
 		
 		manager.load("ball.png", Texture.class);
 		manager.load("diamond.png", Texture.class);
-		manager.load("line1.png", Texture.class);
-		manager.load("line2.png", Texture.class);
+		manager.load("wave1.png", Texture.class);
+		manager.load("wave2.png", Texture.class);
 		manager.load("shadow.png", Texture.class);
 		manager.load("enemy.png", Texture.class);
 		manager.load("beam.png", Texture.class);
 		manager.load("star.png", Texture.class);
 		manager.load("background.png", Texture.class);
 		manager.load("+1.png", Texture.class);
-		manager.load("play8.png", Texture.class);
-		manager.load("title1.png", Texture.class);
+		manager.load("play.png", Texture.class);
+		manager.load("title.png", Texture.class);
 		manager.load("share.png", Texture.class);
 		manager.load("rate.png", Texture.class);
+		
+		manager.load("diamonds/1.png", Texture.class);
+		manager.load("diamonds/2.png", Texture.class);
+		manager.load("diamonds/3.png", Texture.class);
+		manager.load("diamonds/4.png", Texture.class);
+		manager.load("diamonds/5.png", Texture.class);
+		manager.load("diamonds/6.png", Texture.class);
+		manager.load("diamonds/7.png", Texture.class);
+		
 		loadFonts();
 	}
 
 	public void assignAssets() {
 		ball = new Sprite(manager.get("ball.png", Texture.class));
-		diamond = new Sprite(manager.get("diamond.png", Texture.class));
+		diamond = new Sprite(manager.get("diamonds/1.png", Texture.class));
 		hero = new Sprite(manager.get("star.png", Texture.class));
 		enemy = new Sprite(manager.get("enemy.png", Texture.class));
 		beam = new Sprite(manager.get("beam.png", Texture.class));
 		background = new Sprite(manager.get("background.png", Texture.class));
-		wave1 = new Sprite(manager.get("line1.png", Texture.class));
-		wave2 = new Sprite(manager.get("line2.png", Texture.class));
+		wave1 = new Sprite(manager.get("wave1.png", Texture.class));
+		wave2 = new Sprite(manager.get("wave2.png", Texture.class));
 		shadow = new Sprite(manager.get("shadow.png", Texture.class));
 		plusOne = new Sprite(manager.get("+1.png", Texture.class));
-		play = new Sprite(manager.get("play8.png", Texture.class));
-		title = new Sprite(manager.get("title1.png", Texture.class));
+		play = new Sprite(manager.get("play.png", Texture.class));
+		title = new Sprite(manager.get("title.png", Texture.class));
 		share = new Sprite(manager.get("share.png", Texture.class));
 		rate = new Sprite(manager.get("rate.png", Texture.class));
 		
+		for (int i = 0; i < 7; i++) {
+			diamonds[i] = new Sprite(manager.get("diamonds/" + (i + 1) + ".png", Texture.class));
+		}
+		
+		diamondAnimation = new Animation(0.09f, diamonds);
+		
+		ball.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		diamond.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		hero.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		enemy.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		beam.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		background.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		wave1.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		wave2.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		shadow.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		plusOne.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		play.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		title.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		share.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		rate.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 	
+		backgroundHeight = background.getHeight();
+		backgroundWidth = background.getHeight();
+				
 		ubuntuFont[SMALL_FONT] = manager.get("ubuntu1.ttf", BitmapFont.class);
 		ubuntuFont[MEDIUM_FONT] = manager.get("ubuntu2.ttf", BitmapFont.class);
 		ubuntuFont[LARGE_FONT] = manager.get("ubuntu3.ttf", BitmapFont.class);
@@ -227,7 +258,7 @@ public class AssetLoader {
 		parameter10.fontParameters.minFilter = Texture.TextureFilter.Nearest;
 		parameter10.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
 		parameter10.fontParameters.size = fontSize4;
-		parameter10.fontFileName = "Comfortaa_Regular.ttf";		
+		parameter10.fontFileName = "Comfortaa_Regular.ttf";
 		manager.load("goca2.ttf", BitmapFont.class, parameter10);
 		
 		fontSize1 = 20 * (int) screenWidth / 600;

@@ -26,7 +26,7 @@ public class CounterWave extends Wave {
 	public CounterWave(float phase, float amplitude, float speed, float radius,
 			float ballX, float screenWidth, float screenHeight, Color color, WaveEquation waveEquation, AssetLoader assetLoader) {
 		super(phase, amplitude, speed, screenWidth, screenHeight, color, assetLoader);
-		_enemyFrequency = screenWidth / 2.4f;
+		_enemyFrequency = screenWidth / 1.2f;
 		_enemyRadius = radius;
 		_accelerationManager = new AccelerationManager(screenWidth, screenHeight,
 				screenWidth / 40.0f, screenWidth / 2.2f, screenWidth / 1.6f, screenWidth / 2.0f, waveEquation);
@@ -52,10 +52,10 @@ public class CounterWave extends Wave {
 		}
 		tryRemoveEnemyOrDiamond(cameraX);
 		
-		_enemyFrequency = Math.max(_enemyFrequency - cameraX / 100 * _screenWidth * _screenWidth / 100.0f, _screenWidth / 3.0f); 
+		_enemyFrequency = Math.max(_screenWidth / 1.2f - (cameraX / (_screenWidth * 100.0f)) * _screenWidth / 2.0f, _screenWidth / 2.6f); 
 	}
 	private void tryAddEnemyOrDiamond(float cameraX) {
-		if ((cameraX > _screenWidth * 0.7f) && (_circles.size() == 0 || _circles.get(_circles.size() - 1)._x - cameraX > _enemyFrequency)) {
+		if ((cameraX > _screenWidth * 3.75f) && (_circles.size() == 0 || _circles.get(_circles.size() - 1)._x - cameraX > _enemyFrequency)) {
 			if (Math.random() < 0.9 || _circles.size() < 2) {
 				_circles.add(new CircleEntity(cameraX, 0.0f,  _enemyRadius, (float) _screenWidth / 2.0f));
 			} else {
@@ -75,7 +75,8 @@ public class CounterWave extends Wave {
 	public void render(SpriteBatch renderer, float cameraX) {
 		super.render(renderer, cameraX, true, waveColor);
 		for (CircleEntity enemy: _circles) {
-			drawCircle(renderer, enemy._x, enemy._y, enemy._type == Type.DIAMOND ? _diamondRadius : _enemyRadius, enemy._type == Type.DIAMOND ? CircleType.DIAMOND : CircleType.ENEMY);
+			_waveEquation.getDerivative(enemy._x, _tmpVector);
+			drawCircle(renderer, enemy._x, enemy._y, enemy._type == Type.DIAMOND ? _diamondRadius : _enemyRadius, 0.0f, enemy._type == Type.DIAMOND ? CircleType.DIAMOND : CircleType.ENEMY);
 		}
 	}
 }

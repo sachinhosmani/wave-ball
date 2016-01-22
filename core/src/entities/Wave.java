@@ -3,6 +3,7 @@ package entities;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 
 import utils.AssetLoader;
@@ -32,6 +33,7 @@ public class Wave {
 	private float _plusOneX, _plusOneY;
 	protected TimeSnapshot _plusOneTimeSnapshot = TimeSnapshotStore.get();
 	protected float _diamondRadius;
+	private long _startTime = System.currentTimeMillis();
 	
 	public enum CircleType {
 		BALL,
@@ -43,7 +45,8 @@ public class Wave {
 	
 	public enum WaveType {
 		MAIN,
-		COUNTER
+		COUNTER,
+		SHADOW
 	};
 	
 	public Wave(float phase, float amplitude, float speed, float screenWidth, float screenHeight, Color color, AssetLoader assetLoader) {
@@ -91,7 +94,8 @@ public class Wave {
 				dampingFraction *= 0.998f;
 			}
 //			y = (y - _screenHeight / 2.0f) * damping + _screenHeight / 2.0f;
-			drawLine(renderer, x, y, prevX, prevY, _screenWidth / 300.0f, opposite ? WaveType.COUNTER : WaveType.MAIN);
+			drawLine(renderer, x, y, prevX, prevY, _screenWidth / 150.0f, opposite ? WaveType.COUNTER : WaveType.MAIN);
+//			drawLine(renderer, x, y - _screenWidth / 100.0f, prevX, prevY - _screenWidth / 100.0f, _screenWidth / 300.0f, WaveType.SHADOW);
 			prevY = y;
 			prevX = x;
 			_waveEquation.getDerivative(x, _tmpVector);
@@ -137,7 +141,18 @@ public class Wave {
 		x2 = _tmpVector1.x + midX;
 		y2 = _tmpVector1.y + midY;
 
-		Sprite wave = type == WaveType.MAIN ? _assetLoader.wave1 : _assetLoader.wave2;
+		if (angle < 90) {
+//			float tmp = x1;
+//			x1 = x2;
+//			x2 = x1;
+//			
+//			tmp = y1;
+//			y1 = y2;
+//			y2 = y1;
+			
+			angle = 180 + angle;
+		}
+		Sprite wave = type == WaveType.MAIN ? _assetLoader.wave1 : (type == WaveType.COUNTER ? _assetLoader.wave2 : _assetLoader.shadow);
 		wave.setBounds(x1 - width / 2.0f, y1, width, Math.abs(y2 - y1));
 		wave.setOriginCenter();
 		wave.setRotation(angle - 90);
@@ -212,13 +227,23 @@ public class Wave {
 //	 
 //	  renderer.draw(_assetLoader.rectangle1.getTexture(), vertices, 0, vertices.length);
 	}
-	public void drawCircle(SpriteBatch renderer, float x, float y, float r, CircleType type) {
+	public void drawCircle(SpriteBatch renderer, float x, float y, float r, float angle, CircleType type) {
+		drawCircle(renderer, x, y, r, angle, 1.0f, type);
+	}
+	public void drawCircle(SpriteBatch renderer, float x, float y, float r, float angle, float alpha, CircleType type) {
 		_tmpVector.x = x - _screenWidth / 2.0f;
 		_tmpVector.y = y - _screenHeight / 2.0f;
 		_tmpVector.rotate(Constants.rotation);
 		x = _screenWidth / 2.0f + _tmpVector.x;
 		y = _screenHeight / 2.0f + _tmpVector.y;
 //		_assetLoader.circle2.setColor(c);
+		
+//		if (type == CircleType.DIAMOND) {
+//			TextureRegion frame = _assetLoader.diamondAnimation.getKeyFrame((System.currentTimeMillis() - _startTime) / 1000.0f, true);
+//			renderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+//			renderer.draw(frame, x - r, y - r, 2 * r, 2 * r);
+//			return;
+//		}
 		
 		Sprite asset;
 		switch (type) {
@@ -238,13 +263,9 @@ public class Wave {
 			asset = _assetLoader.ball;
 		}
 		asset.setBounds(x - r, y - r, 2 * r, 2 * r);
-		if (type == CircleType.INVISIBLE) {
-			asset.setAlpha(0.4f);
-		} else {
-			asset.setAlpha(1.0f);
-		}
-		asset.setOrigin(0.0f, 0.0f);
-		asset.setRotation(0.0f);
+		asset.setAlpha(alpha);
+		asset.setOriginCenter();
+		asset.setRotation(angle * 180 / (float) Math.PI);
 		asset.draw(renderer);
 	}
 	public float normalizeAngle(float angle) {

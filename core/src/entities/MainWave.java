@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.wave.ball.WaveBall.GameState;
 
@@ -31,7 +32,6 @@ public class MainWave extends Wave {
 	private static final Color color = new Color(0.0f, 0.0f, 1.0f, 0.9f);
 	private static final Color heroColor = new Color(0.0f, 0.5f, 1.0f, 0.4f);
 	public Circle ballShape;
-	public Circle helperBallShape;
 	public Vector2 ballVector = new Vector2();
 	private Vector2 _tmpVector = new Vector2();
 	private float camSpeedTrailing;
@@ -54,7 +54,7 @@ public class MainWave extends Wave {
 	private boolean _lastMultiple = false;
 	public boolean _heroMode;
 	public long _heroModeStartTime;
-	private long HERO_DURATION = 5000;
+	private long HERO_DURATION = 4000;
 	private boolean _heroAnim;
 	private ScoreBoard _scoreBoard;
 	
@@ -63,13 +63,12 @@ public class MainWave extends Wave {
 	private float _heroAnimY;
 	private long _heroAnimTime;
 	private final long _heroAnimTotalTime = 1000;
+	private float _ballAlpha = 1.0f;
 
 	public float getBallX() {
 		return _ballX;
 	}
-	public float getRadius() {
-		return _radius;
-	}
+
 	public WaveEquation getWaveEquation() {
 		return _waveEquation;
 	}
@@ -83,7 +82,6 @@ public class MainWave extends Wave {
 		_radius = radius;
 		_acceleration = new Acceleration(speed / 50.0f, speed / 300.0f, speed);
 		ballShape = new Circle(0.0f, 0.0f, _radius);
-		helperBallShape = new Circle(0.0f, 0.0f, _radius);
 		_startX = 0.0f;
 		camSpeedTrailing = (float) screenWidth / 6.0f;
 		rotatorWidth = _screenWidth / 10.0f;
@@ -123,7 +121,7 @@ public class MainWave extends Wave {
 		}
 		_acceleration.update(timeElapsed);
 		if (gameState != GameState.BALL_FALLING) {
-			increasePhase(timeElapsed * _acceleration.getSpeed() / 1000);
+			increasePhase(timeElapsed * _acceleration.getSpeed() / 1000 * (_heroMode ? 2.0f : 1.0f));
 			_waveEquation.get(_ballX, _tmpVector);
 			_ballY = _tmpVector.y;
 		} else {
@@ -164,6 +162,12 @@ public class MainWave extends Wave {
 		if (System.currentTimeMillis() - _heroModeStartTime > HERO_DURATION) {
 			_heroMode = false;
 		}
+		if (System.currentTimeMillis() - _heroModeStartTime > HERO_DURATION * 0.7f) {
+			_ballAlpha = (float) Math.min(0.004 + _ballAlpha, 1.0);
+		}
+		if (_heroMode && System.currentTimeMillis() - _heroModeStartTime < HERO_DURATION * 0.1f) {
+			_ballAlpha = (float) Math.max(_ballAlpha - 0.01, 0.4f);
+		}
 	}
 
 	protected void addDiamond(float x) {
@@ -173,7 +177,6 @@ public class MainWave extends Wave {
 	protected void addHero(float x) {
 		_waveEquation.get(x, _tmpVector);
 		_diamonds.add(new CircleEntity(x, _tmpVector.y,  _diamondRadius, (float) _screenWidth / 2.0f, Type.HERO));
-		_heroMode = true;
 	}
 	private void tryRemoveDiamonds(float cameraX) {
 		if (_diamonds.size() == 0) {
@@ -226,7 +229,8 @@ public class MainWave extends Wave {
 	public void render(SpriteBatch renderer, float cameraX) {
 		super.render(renderer, cameraX, waveColor);
 		heroRender(renderer);
-		drawCircle(renderer, _ballX, _ballY, _radius, _heroMode ? CircleType.INVISIBLE : CircleType.BALL);
+//		_waveEquation.getDerivative(_ballX, _tmpVector);
+		drawCircle(renderer, _ballX, _ballY, _radius, 0.0f, _ballAlpha, _heroMode ? CircleType.INVISIBLE : CircleType.BALL);
 //		if (_startX > _screenWidth / 100.0f) {
 //			_waveEquation.get(_startX, _tmpVector);
 //			drawCircle(renderer, _tmpVector.x, _tmpVector.y, _radius / 2.0f, CircleType.ENEMY);
@@ -235,7 +239,7 @@ public class MainWave extends Wave {
 			rotator.render(renderer);
 		}
 		for (CircleEntity diamond: _diamonds) {
-			drawCircle(renderer, diamond._x, diamond._y, _diamondRadius, diamond._type == Type.DIAMOND ? CircleType.DIAMOND : CircleType.HERO);
+			drawCircle(renderer, diamond._x, diamond._y, _diamondRadius, 0.0f, diamond._type == Type.DIAMOND ? CircleType.DIAMOND : CircleType.HERO);
 		}
 	}
 	public void start() {

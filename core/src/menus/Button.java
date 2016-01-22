@@ -35,7 +35,7 @@ public class Button {
 		centerX = x;
 		centerY = y;
 		this.x -= this.w / 2;
-		this.y -= this.h / 2;
+		this.y += this.h / 2;
 		this.font = font;
 		this.color = color;
 		this.paddingFractionX = paddingFractionX;

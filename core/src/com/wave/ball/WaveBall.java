@@ -27,6 +27,7 @@ import menus.Menu;
 import menus.ScoreMenu;
 import utils.AccelerationManager;
 import utils.AssetLoader;
+import utils.BackgroundAnimation;
 import utils.Constants;
 import utils.InputHandler;
 import utils.PreferenceManager;
@@ -71,6 +72,8 @@ public class WaveBall extends ApplicationAdapter {
 	private ScoreMenu _scoreMenu;
 	private PreferenceManager _prefManager;
 	private HashMap<GameState, Menu> _stateToMenu = new HashMap<GameState, Menu>();
+	
+	private BackgroundAnimation _backgroundAnimation;
 	
 	private CrossRate _rate;
 	private CrossShare _share;
@@ -123,10 +126,12 @@ public class WaveBall extends ApplicationAdapter {
 			if (_assetLoader.update()) {
 				_assetsLoaded = true;
 				_assetLoader.assignAssets();
-				_mainMenu = new MainMenu(screenWidth, screenHeight, _assetLoader);
+				_mainMenu = new MainMenu(screenWidth, screenHeight, (int) _prefManager.getPoints(), _assetLoader);
 				_scoreMenu = new ScoreMenu(screenWidth, screenHeight, _assetLoader);
 				_stateToMenu.put(GameState.MENU, _mainMenu);
 				_stateToMenu.put(GameState.SCORE_MENU, _scoreMenu);
+				
+				_backgroundAnimation = new BackgroundAnimation((_assetLoader.backgroundWidth - screenWidth) / 2, (_assetLoader.backgroundHeight - screenHeight) / 2);
 				System.out.println("loaded");
 			}
 			return;
@@ -141,8 +146,8 @@ public class WaveBall extends ApplicationAdapter {
 			
 			_spriteBatch.setProjectionMatrix(cam.combined);
 			_spriteBatch.begin();
-			_assetLoader.background.setBounds(cam.position.x - screenWidth / 2, cam.position.y - screenHeight / 2, screenWidth, screenHeight);
-			_assetLoader.background.draw(_spriteBatch);
+			drawBackground(cam);
+			
 			counterWave.render(_spriteBatch, cameraX);
 			counterWave.update(cameraX);
 			wave.render(_spriteBatch, cameraX);
@@ -162,8 +167,8 @@ public class WaveBall extends ApplicationAdapter {
 		    Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		    _spriteBatch.setProjectionMatrix(fixedCam.combined);
 			_spriteBatch.begin();
-		    _assetLoader.background.setBounds(0.0f, 0.0f, screenWidth, screenHeight);
-			_assetLoader.background.draw(_spriteBatch);
+		    
+			drawBackground(fixedCam);
 			Menu menu = _stateToMenu.get(_gameState);
 			menu.update();
 			for (Button btn: menu.buttons) {
@@ -177,12 +182,20 @@ public class WaveBall extends ApplicationAdapter {
 			if (_fallingDuration >= FALLING_DURATION_TOTAL) {
 				_fallingDuration = 0;
 				storeScores();
-				_scoreMenu.reset(wave.getScore(), (int) _prefManager.getMaxScore());
+				_scoreMenu.reset(wave.getScore(), (int) _prefManager.getMaxScore(), (int) _prefManager.getPoints());
 				_gameState = GameState.SCORE_MENU;
 			}
 		}
 	}
 
+	public void drawBackground(OrthographicCamera cam) {
+		_backgroundAnimation.update();
+		float x = (cam.position.x - _assetLoader.backgroundWidth / 2);
+		float y = (cam.position.y - _assetLoader.backgroundHeight / 2);
+//		System.out.println(_backgroundAnimation.getX() + "," + _backgroundAnimation.getY());
+		_assetLoader.background.setBounds(x + _backgroundAnimation.getX(), y + _backgroundAnimation.getY(), _assetLoader.backgroundWidth, _assetLoader.backgroundHeight);
+		_assetLoader.background.draw(_spriteBatch);
+	}
 	public void checkGameEnd() {
 		if (wave.getBallX() < wave.getStartX()) {
 			_gameState = GameState.BALL_FALLING;

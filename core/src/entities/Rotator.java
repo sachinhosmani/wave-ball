@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Polygon;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
 import utils.AssetLoader;
@@ -227,9 +228,10 @@ public class Rotator {
 	}
 	
 	public boolean checkCollision(Circle circleShape) {
-		if (shape2.getVertices().length > 1) {
-			centroid(shape2.getVertices(), _tmpVector1);
-		}
 		return overlaps(shape1, circleShape) || overlaps(shape2, circleShape); 
+	}
+	
+	public boolean checkCollision(Polygon shape) {
+		return Intersector.overlapConvexPolygons(shape, shape1) || Intersector.overlapConvexPolygons(shape, shape2);
 	}
 }
