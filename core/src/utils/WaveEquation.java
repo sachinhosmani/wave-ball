@@ -45,7 +45,7 @@ public class WaveEquation {
 		float frequencyChangeWindow = findFrequencyChangeWindow(screenWidth);
 		float rotatorFrequency = screenWidth / 1.5f;
 		phaseClassifier = new PhaseClassifier(screenWidth);
-		float lastRotatorX = screenWidth;
+		float lastRotatorX = screenWidth / 2.0f;
 		float x;
 		boolean first = false, second = false;
 		float lastAngle = 0.0f;
@@ -58,7 +58,7 @@ public class WaveEquation {
 				amplitudeIncreasing = false;
 				lastAmplitudeChangeX = x;
 			}
-			if (angleDelta > 1.0f * baseAngleDelta) {
+			if (angleDelta > 0.85f * baseAngleDelta) {
 				frequencyIncreasing = false;
 				lastFrequencyChangeX = x;
 			}
@@ -132,7 +132,7 @@ public class WaveEquation {
 						}
 					} else {
 						if (Math.abs(pos - lastHeroPosition) > 2 * screenWidth) {
-							heroPositions.add((pos1 + pos2) / 2 + MathUtils.random(-0.3f, 0.3f) * (pos1 - pos2));
+//							heroPositions.add((pos1 + pos2) / 2 + MathUtils.random(-0.3f, 0.3f) * (pos1 - pos2));
 							lastHeroPosition = (pos1 + pos2) / 2;
 						}
 					}

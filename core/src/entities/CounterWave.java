@@ -57,9 +57,9 @@ public class CounterWave extends Wave {
 	private void tryAddEnemyOrDiamond(float cameraX) {
 		if ((cameraX > _screenWidth * 3.75f) && (_circles.size() == 0 || _circles.get(_circles.size() - 1)._x - cameraX > _enemyFrequency)) {
 			if (Math.random() < 0.9 || _circles.size() < 2) {
-				_circles.add(new CircleEntity(cameraX, 0.0f,  _enemyRadius, (float) _screenWidth / 2.0f));
+				_circles.add(new CircleEntity(cameraX - _screenWidth * 0.1f, 0.0f,  _enemyRadius, (float) _screenWidth / 2.0f));
 			} else {
-				_circles.add(new CircleEntity(cameraX, 0.0f,  _enemyRadius, (float) _screenWidth / 2.0f, CircleEntity.Type.DIAMOND));
+				_circles.add(new CircleEntity(cameraX - _screenWidth * 0.1f, 0.0f,  _enemyRadius, (float) _screenWidth / 2.0f, CircleEntity.Type.DIAMOND));
 			}
 		}
 	}
@@ -68,7 +68,7 @@ public class CounterWave extends Wave {
 			return;
 		}
 		CircleEntity enemy = _circles.get(0);
-		if (enemy._x > cameraX + _screenWidth || enemy._x < cameraX - _screenWidth) {
+		if (enemy._x > cameraX + _screenWidth * 1.1f || enemy._x < cameraX - _screenWidth * 1.1f) {
 			_circles.remove(enemy);
 		}
 	}

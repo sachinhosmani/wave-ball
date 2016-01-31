@@ -59,4 +59,25 @@ public class PreferenceManager {
 		prefs.putLong("max_score", val);
 		prefs.flush();
 	}
+	public long getLastScore() {
+		return prefs.getLong("last_score", -1);
+	}
+	public void setLastScore(long val) {
+		prefs.putLong("last_score", val);
+		prefs.flush();
+	}
+	public long getSelectedBall() {
+		return prefs.getLong("selected_ball", 0);
+	}
+	public void setSelectedBall(long val) {
+		prefs.putLong("selected_ball", val);
+		prefs.flush();
+	}
+	public long getMaxBallUnlock() {
+		return prefs.getLong("max_ball_unlock", 0);
+	}
+	public void setMaxBallUnlock(long val) {
+		prefs.putLong("max_ball_unlock", val);
+		prefs.flush();
+	}
 }

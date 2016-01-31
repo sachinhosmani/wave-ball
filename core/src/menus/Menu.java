@@ -7,9 +7,12 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 
+import utils.ButtonAnimation;
+
 public class Menu {
 	public ArrayList<Button> buttons;
 	private float _screenWidth, _screenHeight;
+	protected ArrayList<ButtonAnimation> _animations = new ArrayList<ButtonAnimation>();
 	public Menu(float screenWidth, float screenHeight) {
 		buttons = new ArrayList<Button>();
 		this._screenWidth = screenWidth;
@@ -34,7 +37,9 @@ public class Menu {
 	private int findIDForClick(float clickX, float clickY) {
 		for (Button button: buttons) {
 			if (button.contains(clickX, clickY)) {
-				return button.id;
+				if (button.id != 0) {
+					return button.id;
+				}
 			}
 		}
 		return 0;
@@ -45,6 +50,11 @@ public class Menu {
 	}
 	public void update() {
 		
+	}
+	protected void reset() {
+		for (ButtonAnimation animation: _animations) {
+			animation.reset();
+		}
 	}
 	public void setButtonPosition(Button btn, float x, float y) {
 		btn.centerX = _screenWidth * x;

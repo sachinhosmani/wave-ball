@@ -57,6 +57,7 @@ public class MainWave extends Wave {
 	private long HERO_DURATION = 4000;
 	private boolean _heroAnim;
 	private ScoreBoard _scoreBoard;
+	private ScoreCheckpoints _scoreCheckpoints;
 	
 	private TimeSnapshot _heroAnimTimeSnapshot = TimeSnapshotStore.get();
 	private float _heroAnimX;
@@ -73,29 +74,30 @@ public class MainWave extends Wave {
 		return _waveEquation;
 	}
 	public MainWave(float phase, float amplitude, int frequency, float speed, float radius, float ballX,
-			float screenWidth, float screenHeight, Color color, ScoreBoard scoreBoard, AssetLoader assetLoader) {
+			float screenWidth, float screenHeight, Color color, ScoreBoard scoreBoard, ScoreCheckpoints checkpoints, AssetLoader assetLoader) {
 		super(phase, amplitude, speed, screenWidth, screenHeight, color, assetLoader);
 		_baseAngleDelta = 2 * ((float) Math.PI) / 700.0f;
 		_waveEquation = new WaveEquation(amplitude, _baseAngleDelta, screenWidth,
-				screenHeight / 2.0f, _baseAngleDelta / 2500.0f, amplitude / 2000.0f);
+				screenHeight / 2.0f, _baseAngleDelta / 2500.0f, amplitude / 2200.0f);
 		_ballX = ballX;
 		_radius = radius;
 		_acceleration = new Acceleration(speed / 50.0f, speed / 300.0f, speed);
 		ballShape = new Circle(0.0f, 0.0f, _radius);
 		_startX = 0.0f;
 		camSpeedTrailing = (float) screenWidth / 6.0f;
-		rotatorWidth = _screenWidth / 10.0f;
+		rotatorWidth = _screenWidth / 9.0f;
 		_phaseClassifier = new PhaseClassifier(screenWidth);
 		_ballMaxSpeed = speed;
 		_ballMaxBoostedSpeed = speed * 1.5f;
 		_score = 0;
 		_points = 0;
 		_rotatorPositions = new LinkedList<Float>();
-		_rotatorSpeed = (float) Math.PI / 1300.0f;
+		_rotatorSpeed = (float) Math.PI / 1200.0f;
 		_diamonds = new ArrayList<CircleEntity>();
 		_heroMode = false;
 		_heroModeStartTime = 0;
 		_scoreBoard = scoreBoard;
+		_scoreCheckpoints = checkpoints;
 	}
 
 	public void update(float cameraX, GameState gameState) {
@@ -113,6 +115,7 @@ public class MainWave extends Wave {
 			float xPos = _waveEquation.peekNextRotatorPosition();
 			_waveEquation.popRotatorPosition();
 			addRotator(xPos, _waveEquation.peekRotatorMultiple());
+			_scoreCheckpoints.nextCheckpoint(xPos);
 			_waveEquation.popRotatorMultiple();
 			_rotatorPositions.add(xPos);
 		}
@@ -148,12 +151,13 @@ public class MainWave extends Wave {
 		
 //		_rotatorSpeed = Math.min(_rotatorSpeed + (float) Math.PI / 1300.0f / 80000.0f, (float) Math.PI / 1100.0f);
 		
-		if (!_waveEquation.allDiamondsDone() && (cameraX + _screenWidth) > _waveEquation.peekNextDiamondPosition()) {
+		if (!_waveEquation.allDiamondsDone() && (cameraX + _screenWidth * 1.1f) > _waveEquation.peekNextDiamondPosition()) {
 			float xPos = _waveEquation.peekNextDiamondPosition();
 			_waveEquation.popDiamondPosition();
 			addDiamond(xPos);
+			_scoreCheckpoints.nextCheckpoint(xPos);
 		}
-		if (!_waveEquation.allHerosDone() && (cameraX + _screenWidth) > _waveEquation.peekNextHeroPosition()) {
+		if (!_waveEquation.allHerosDone() && (cameraX + _screenWidth * 1.1f) > _waveEquation.peekNextHeroPosition()) {
 			float xPos = _waveEquation.peekNextHeroPosition();
 			_waveEquation.popHeroPosition();
 			addHero(xPos);
@@ -183,7 +187,7 @@ public class MainWave extends Wave {
 			return;
 		}
 		CircleEntity diamond = _diamonds.get(0);
-		if (diamond._x < cameraX - _screenWidth) {
+		if (diamond._x < cameraX - _screenWidth * 1.1f) {
 			_diamonds.remove(diamond);
 		}
 	}
@@ -204,6 +208,10 @@ public class MainWave extends Wave {
 	public void incrementPoints(int increment) {
 		_points += increment;
 		_score += increment;
+	}
+	
+	public int getPoints() {
+		return _points;
 	}
 	
 	protected void increasePhase(float delta) {
@@ -239,7 +247,7 @@ public class MainWave extends Wave {
 			rotator.render(renderer);
 		}
 		for (CircleEntity diamond: _diamonds) {
-			drawCircle(renderer, diamond._x, diamond._y, _diamondRadius, 0.0f, diamond._type == Type.DIAMOND ? CircleType.DIAMOND : CircleType.HERO);
+			drawCircle(renderer, diamond._x, diamond._y, diamond._type == Type.DIAMOND ? _diamondRadius : _enemyRadius, 0.0f, diamond._type == Type.DIAMOND ? CircleType.DIAMOND : CircleType.HERO);
 		}
 	}
 	public void start() {

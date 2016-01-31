@@ -32,7 +32,8 @@ public class Wave {
 	private final long _plusOneTotalTime = 1000;
 	private float _plusOneX, _plusOneY;
 	protected TimeSnapshot _plusOneTimeSnapshot = TimeSnapshotStore.get();
-	protected float _diamondRadius;
+	protected float _diamondRadius, _enemyRadius;
+	protected boolean _diamondRadiusIncreasing = true;
 	private long _startTime = System.currentTimeMillis();
 	
 	public enum CircleType {
@@ -57,7 +58,8 @@ public class Wave {
 		_screenHeight = screenHeight;
 		_color = color.toFloatBits();
 		_assetLoader = assetLoader;
-		_diamondRadius = _screenWidth / 50.0f;
+		_diamondRadius = _screenWidth / 42.0f;
+		_enemyRadius = _screenWidth / 50.0f;
 	}
 	public Float getStartX() {
 		return _startX;
@@ -304,6 +306,17 @@ public class Wave {
 		}
 	}
 	protected void update() {
+		if (_diamondRadiusIncreasing) {
+			_diamondRadius = Math.min(1.2f * _enemyRadius, _diamondRadius + _enemyRadius / 120.0f);
+		} else {
+			_diamondRadius = Math.max(_enemyRadius * 0.8f, _diamondRadius - _enemyRadius / 120.0f);
+		}
+		if (_diamondRadius >= 1.2f * _enemyRadius) {
+			_diamondRadiusIncreasing = false;
+		}
+		if (_diamondRadius <= 0.8f * _enemyRadius) {
+			_diamondRadiusIncreasing = true;
+		}
 		plusOneUpdate();
 	}
 }

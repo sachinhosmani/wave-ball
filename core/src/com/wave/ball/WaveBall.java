@@ -21,10 +21,13 @@ import entities.CounterWave;
 import entities.MainWave;
 import entities.Rotator;
 import entities.ScoreBoard;
+import entities.ScoreCheckpoints;
+import menus.BallMenu;
 import menus.Button;
 import menus.MainMenu;
 import menus.Menu;
 import menus.ScoreMenu;
+import menus.TutorialMenu;
 import utils.AccelerationManager;
 import utils.AssetLoader;
 import utils.BackgroundAnimation;
@@ -65,18 +68,23 @@ public class WaveBall extends ApplicationAdapter {
 	private SpriteBatch _spriteBatch;
 	boolean collided = false;
 	public enum GameState {
-		PLAYING, MENU, BALL_FALLING, SCORE_MENU
+		PLAYING, MENU, BALL_FALLING, SCORE_MENU, TUTORIAL, BALL_CHOOSE
 	};
 	private GameState _gameState = GameState.MENU;
 	private MainMenu _mainMenu;
 	private ScoreMenu _scoreMenu;
+	private TutorialMenu _tutorialMenu;
+	private BallMenu _ballMenu;
 	private PreferenceManager _prefManager;
 	private HashMap<GameState, Menu> _stateToMenu = new HashMap<GameState, Menu>();
 	
 	private BackgroundAnimation _backgroundAnimation;
 	
+	private ScoreCheckpoints _scoreCheckpoints;
+	
 	private CrossRate _rate;
 	private CrossShare _share;
+	public static final int POINTS_PER_BALL = 3;
 	public WaveBall(CrossRate rate, CrossShare share) {
 		_rate = rate;
 		_share = share;
@@ -95,9 +103,9 @@ public class WaveBall extends ApplicationAdapter {
 		_spriteBatch.setProjectionMatrix(cam.combined);
 		camSpeedNormal = (float) screenWidth / 4.25f;
 		
-		_ballSize = screenWidth / 40.0f;
+		_ballSize = screenWidth / 35.0f;
 		_waveAmplitude = screenWidth / 12.0f;
-		_enemySize = screenWidth / 60.0f;
+		_enemySize = screenWidth / 50.0f;
 		_counterWaveAmplitude = screenWidth / 18.0f;
 
 		_assetLoader = new AssetLoader();
@@ -106,8 +114,10 @@ public class WaveBall extends ApplicationAdapter {
 		WaveEquation.initSize(screenWidth * 100, screenWidth / 1000.0f);
 		AccelerationManager.initSize(screenWidth * 100, screenWidth / 100.0f);
 		_scoreBoard = new ScoreBoard(screenWidth, screenHeight, _assetLoader);
+		
 		wave = new MainWave(0.0f, _waveAmplitude, 2, camSpeedNormal, _ballSize, screenWidth * _ballPositionFraction,
-				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _scoreBoard, _assetLoader);
+				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _scoreBoard, _scoreCheckpoints, _assetLoader);
+		
 		counterWave = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
 				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation(), _assetLoader);
 		counterWave.setWaveEquation(wave.getWaveEquation());
@@ -116,7 +126,8 @@ public class WaveBall extends ApplicationAdapter {
 		
 		_tmpVector = new Vector2();
 		_prefManager = new PreferenceManager();
-		
+		_scoreCheckpoints = new ScoreCheckpoints();
+		_scoreCheckpoints.init(_prefManager, screenWidth, screenHeight, _assetLoader);
 	}
 
 	@Override
@@ -126,12 +137,20 @@ public class WaveBall extends ApplicationAdapter {
 			if (_assetLoader.update()) {
 				_assetsLoaded = true;
 				_assetLoader.assignAssets();
-				_mainMenu = new MainMenu(screenWidth, screenHeight, (int) _prefManager.getPoints(), _assetLoader);
-				_scoreMenu = new ScoreMenu(screenWidth, screenHeight, _assetLoader);
+				_mainMenu = new MainMenu(screenWidth, screenHeight, (int) _prefManager.getPoints(), _prefManager, _assetLoader);
+				_mainMenu.reset();
+				_scoreMenu = new ScoreMenu(screenWidth, screenHeight, _prefManager, _assetLoader);
+				_tutorialMenu = new TutorialMenu(screenWidth, screenHeight, _assetLoader);
+				_ballMenu = new BallMenu(screenWidth, screenHeight, (int) _prefManager.getMaxBallUnlock(), _prefManager, _assetLoader);
 				_stateToMenu.put(GameState.MENU, _mainMenu);
 				_stateToMenu.put(GameState.SCORE_MENU, _scoreMenu);
+				_stateToMenu.put(GameState.SCORE_MENU, _scoreMenu);
+				_stateToMenu.put(GameState.TUTORIAL, _tutorialMenu);
+				_stateToMenu.put(GameState.BALL_CHOOSE, _ballMenu);
 				
 				_backgroundAnimation = new BackgroundAnimation((_assetLoader.backgroundWidth - screenWidth) / 2, (_assetLoader.backgroundHeight - screenHeight) / 2);
+				
+				_assetLoader.ball = _assetLoader.balls[(int) _prefManager.getSelectedBall()];
 				System.out.println("loaded");
 			}
 			return;
@@ -155,6 +174,7 @@ public class WaveBall extends ApplicationAdapter {
 			if (_gameState == GameState.PLAYING) {
 				checkGameEnd();
 			}
+			_scoreCheckpoints.render(_spriteBatch, cam.position.x - screenWidth / 2.0f);
 			_spriteBatch.setProjectionMatrix(fixedCam.combined);
 			_scoreBoard.update();
 			_scoreBoard.render(_spriteBatch, cameraX, wave.getScore());
@@ -192,10 +212,10 @@ public class WaveBall extends ApplicationAdapter {
 		_backgroundAnimation.update();
 		float x = (cam.position.x - _assetLoader.backgroundWidth / 2);
 		float y = (cam.position.y - _assetLoader.backgroundHeight / 2);
-//		System.out.println(_backgroundAnimation.getX() + "," + _backgroundAnimation.getY());
 		_assetLoader.background.setBounds(x + _backgroundAnimation.getX(), y + _backgroundAnimation.getY(), _assetLoader.backgroundWidth, _assetLoader.backgroundHeight);
 		_assetLoader.background.draw(_spriteBatch);
 	}
+	
 	public void checkGameEnd() {
 		if (wave.getBallX() < wave.getStartX()) {
 			_gameState = GameState.BALL_FALLING;
@@ -267,7 +287,7 @@ public class WaveBall extends ApplicationAdapter {
 	
 	public void restartGame() {
 		wave = new MainWave(0.0f, _waveAmplitude, 2, camSpeedNormal, _ballSize, screenWidth * _ballPositionFraction,
-				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _scoreBoard, _assetLoader);
+				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _scoreBoard, _scoreCheckpoints, _assetLoader);
 		counterWave = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
 				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation(), _assetLoader);
 		counterWave.setWaveEquation(wave.getWaveEquation());
@@ -277,13 +297,18 @@ public class WaveBall extends ApplicationAdapter {
 		cam.translate(_tmpVector.x, _tmpVector.y);
 		cameraX = 0.0f;
 		cameraY = 0.0f;
+		_scoreCheckpoints.init(_prefManager, screenWidth, screenHeight, _assetLoader);
+		if (Math.random() < 0.1) {
+			_assetLoader.setBackground();
+		}
 	}
 	
 	private void storeScores() {
 		if (_prefManager.getMaxScore() < wave.getScore()) {
 			_prefManager.setMaxScore(wave.getScore());
 		}
-		_prefManager.setPoints(_prefManager.getPoints() + 1);
+		_prefManager.setPoints(_prefManager.getPoints() + wave.getPoints());
+		_prefManager.setLastScore(wave.getScore());
 	}
 	
 	private void manageCameraTranslation() {
@@ -317,7 +342,15 @@ public class WaveBall extends ApplicationAdapter {
 			switch (id) {
 			case MainMenu.PLAY:
 				restartGame();
-				_gameState = GameState.PLAYING;
+				_tutorialMenu.reset();
+				_gameState = GameState.TUTORIAL;
+				break;
+			case MainMenu.RATE:
+				_rate.rate();
+				break;
+			case MainMenu.BALL:
+				_ballMenu.reset();
+				_gameState = GameState.BALL_CHOOSE;
 				break;
 			}
 		} else if (_gameState == GameState.SCORE_MENU) {
@@ -332,6 +365,38 @@ public class WaveBall extends ApplicationAdapter {
 			case ScoreMenu.SHARE:
 				_share.share(wave.getScore());
 				break;
+			case ScoreMenu.HOME:
+				_mainMenu.reset();
+				_gameState = GameState.MENU;
+				break;
+			case ScoreMenu.BALL:
+				_ballMenu.reset();
+				_gameState = GameState.BALL_CHOOSE;
+				break;
+			}
+		} else if (_gameState == GameState.TUTORIAL) {
+			switch (id) {
+			case TutorialMenu.PLAY:
+				restartGame();
+				_gameState = GameState.PLAYING;
+				break;
+			}
+		} else if (_gameState == GameState.BALL_CHOOSE) {
+			switch (id) {
+			case BallMenu.HOME:
+				_mainMenu.reset();
+				_gameState = GameState.MENU;
+				break;
+			}
+			if (id == BallMenu.BALL1 + _prefManager.getMaxBallUnlock() + 1 && _prefManager.getPoints() >= POINTS_PER_BALL) {
+				_prefManager.setMaxBallUnlock(_prefManager.getMaxBallUnlock() + 1);
+				_prefManager.setPoints(_prefManager.getPoints() - POINTS_PER_BALL);
+				_ballMenu.resetMaxBallUnlock();
+				_mainMenu.reset();
+			} else if (id >= BallMenu.BALL1 && id <= BallMenu.BALL1 + _prefManager.getMaxBallUnlock()) {
+				_prefManager.setSelectedBall(id - BallMenu.BALL1);
+				_ballMenu.resetSelection();
+				_assetLoader.ball = _assetLoader.balls[id - BallMenu.BALL1];
 			}
 		}
 	}

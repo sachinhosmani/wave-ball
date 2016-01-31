@@ -21,6 +21,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFont
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
 import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader;
 import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader.FreeTypeFontLoaderParameter;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.I18NBundle;
 
@@ -33,11 +34,16 @@ public class AssetLoader {
 	public Sprite beam;
 	public Sprite background;
 	public Sprite plusOne;
+	public Sprite[] backgrounds = new Sprite[3];
 	
 	public Sprite play;
 	public Sprite title;
 	public Sprite share;
 	public Sprite rate;
+	public Sprite tutorial;
+	public Sprite line;
+	public Sprite home;
+	public Sprite lock;
 	
 	public int fontSize1, fontSize2, fontSize3, fontSize4;
 	public float screenWidth, screenHeight;
@@ -58,11 +64,17 @@ public class AssetLoader {
 	
 	public float backgroundWidth, backgroundHeight;
 	
+	public final int NUM_BALLS = 13;
+	public Sprite[] balls = new Sprite[NUM_BALLS];
+	
 	public void load(float screenWidth, float screenHeight) {
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
 		
-		manager.load("ball.png", Texture.class);
+		for (int i = 0; i < NUM_BALLS; i++) {
+			manager.load("balls/ball" + i + ".png", Texture.class);
+		}
+		
 		manager.load("diamond.png", Texture.class);
 		manager.load("wave1.png", Texture.class);
 		manager.load("wave2.png", Texture.class);
@@ -70,31 +82,31 @@ public class AssetLoader {
 		manager.load("enemy.png", Texture.class);
 		manager.load("beam.png", Texture.class);
 		manager.load("star.png", Texture.class);
-		manager.load("background.png", Texture.class);
+		manager.load("background1.png", Texture.class);
+		manager.load("background2.png", Texture.class);
+		manager.load("background3.png", Texture.class);
 		manager.load("+1.png", Texture.class);
 		manager.load("play.png", Texture.class);
 		manager.load("title.png", Texture.class);
 		manager.load("share.png", Texture.class);
 		manager.load("rate.png", Texture.class);
-		
-		manager.load("diamonds/1.png", Texture.class);
-		manager.load("diamonds/2.png", Texture.class);
-		manager.load("diamonds/3.png", Texture.class);
-		manager.load("diamonds/4.png", Texture.class);
-		manager.load("diamonds/5.png", Texture.class);
-		manager.load("diamonds/6.png", Texture.class);
-		manager.load("diamonds/7.png", Texture.class);
+		manager.load("diamond.png", Texture.class);
+		manager.load("tutorial.png", Texture.class);
+		manager.load("line.png", Texture.class);
+		manager.load("home.png", Texture.class);
+		manager.load("lock.png", Texture.class);
 		
 		loadFonts();
 	}
 
 	public void assignAssets() {
-		ball = new Sprite(manager.get("ball.png", Texture.class));
-		diamond = new Sprite(manager.get("diamonds/1.png", Texture.class));
+		diamond = new Sprite(manager.get("diamond.png", Texture.class));
 		hero = new Sprite(manager.get("star.png", Texture.class));
 		enemy = new Sprite(manager.get("enemy.png", Texture.class));
 		beam = new Sprite(manager.get("beam.png", Texture.class));
-		background = new Sprite(manager.get("background.png", Texture.class));
+		backgrounds[0] = new Sprite(manager.get("background1.png", Texture.class));
+		backgrounds[1] = new Sprite(manager.get("background2.png", Texture.class));
+		backgrounds[2] = new Sprite(manager.get("background3.png", Texture.class));
 		wave1 = new Sprite(manager.get("wave1.png", Texture.class));
 		wave2 = new Sprite(manager.get("wave2.png", Texture.class));
 		shadow = new Sprite(manager.get("shadow.png", Texture.class));
@@ -103,10 +115,17 @@ public class AssetLoader {
 		title = new Sprite(manager.get("title.png", Texture.class));
 		share = new Sprite(manager.get("share.png", Texture.class));
 		rate = new Sprite(manager.get("rate.png", Texture.class));
+		tutorial = new Sprite(manager.get("tutorial.png", Texture.class));
+		line = new Sprite(manager.get("line.png", Texture.class));
+		home = new Sprite(manager.get("home.png", Texture.class));
+		lock = new Sprite(manager.get("lock.png", Texture.class));
 		
-		for (int i = 0; i < 7; i++) {
-			diamonds[i] = new Sprite(manager.get("diamonds/" + (i + 1) + ".png", Texture.class));
+		setBackground();
+		for (int i = 0; i < NUM_BALLS; i++) {
+			balls[i] = new Sprite(manager.get("balls/ball" + i + ".png", Texture.class));
+			balls[i].getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		}
+		ball = balls[0];
 		
 		diamondAnimation = new Animation(0.09f, diamonds);
 		
@@ -124,6 +143,10 @@ public class AssetLoader {
 		title.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		share.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		rate.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		tutorial.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		line.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		home.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		lock.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 	
 		backgroundHeight = background.getHeight();
 		backgroundWidth = background.getHeight();
@@ -138,11 +161,15 @@ public class AssetLoader {
 		otherFont[LARGE_FONT] = manager.get("other3.ttf", BitmapFont.class);
 		otherFont[EXTRA_LARGE_FONT] = manager.get("other4.ttf", BitmapFont.class);
 		
-		gocaFont[MEDIUM_FONT] = manager.get("goca1.ttf", BitmapFont.class);
-		gocaFont[LARGE_FONT] = manager.get("goca2.ttf", BitmapFont.class);
+		gocaFont[SMALL_FONT] = manager.get("goca1.ttf", BitmapFont.class);
+		gocaFont[MEDIUM_FONT] = manager.get("goca2.ttf", BitmapFont.class);
+		gocaFont[LARGE_FONT] = manager.get("goca3.ttf", BitmapFont.class);
+		gocaFont[EXTRA_LARGE_FONT] = manager.get("goca4.ttf", BitmapFont.class);
 		
-		goodFont[MEDIUM_FONT] = manager.get("good1.ttf", BitmapFont.class);
-		goodFont[LARGE_FONT] = manager.get("good2.ttf", BitmapFont.class);
+		goodFont[SMALL_FONT] = manager.get("good1.ttf", BitmapFont.class);
+		goodFont[MEDIUM_FONT] = manager.get("good2.ttf", BitmapFont.class);
+		goodFont[LARGE_FONT] = manager.get("good3.ttf", BitmapFont.class);
+		goodFont[EXTRA_LARGE_FONT] = manager.get("good4.ttf", BitmapFont.class);
 		
 		ubuntuFont[SMALL_FONT].getRegion().getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		ubuntuFont[SMALL_FONT].getData().setScale(1.0f, 1.0f);
@@ -162,15 +189,15 @@ public class AssetLoader {
 		otherFont[EXTRA_LARGE_FONT].getRegion().getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		otherFont[EXTRA_LARGE_FONT].getData().setScale(1.0f, 1.0f);
 		
-		gocaFont[MEDIUM_FONT].getRegion().getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		gocaFont[SMALL_FONT].getRegion().getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		gocaFont[MEDIUM_FONT].getData().setScale(1.0f, 1.0f);
 		gocaFont[LARGE_FONT].getRegion().getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		gocaFont[LARGE_FONT].getData().setScale(1.0f, 1.0f);
+		gocaFont[EXTRA_LARGE_FONT].getData().setScale(1.0f, 1.0f);
 		
-		goodFont[MEDIUM_FONT].getRegion().getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		goodFont[SMALL_FONT].getRegion().getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		goodFont[MEDIUM_FONT].getData().setScale(1.0f, 1.0f);
 		goodFont[LARGE_FONT].getRegion().getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		goodFont[LARGE_FONT].getData().setScale(1.0f, 1.0f);
+		goodFont[EXTRA_LARGE_FONT].getData().setScale(1.0f, 1.0f);
 		
 		FileHandle i18nHandle = Gdx.files.internal("i18n/MyBundle");
 		i18nBundle = I18NBundle.createBundle(i18nHandle, Locale.getDefault());
@@ -247,37 +274,66 @@ public class AssetLoader {
 		fontSize2 = 27 * (int) screenWidth / 600;
 		fontSize3 = 37 * (int) screenWidth / 600;
 		fontSize4 = 50 * (int) screenWidth / 600;
+		
 		FreeTypeFontLoaderParameter parameter9 = new FreeTypeFontLoaderParameter();
 		parameter9.fontParameters.minFilter = Texture.TextureFilter.Nearest;
 		parameter9.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
-		parameter9.fontParameters.size = fontSize3;
+		parameter9.fontParameters.size = fontSize1;
 		parameter9.fontFileName = "Comfortaa_Regular.ttf";		
 		manager.load("goca1.ttf", BitmapFont.class, parameter9);
 		
 		FreeTypeFontLoaderParameter parameter10 = new FreeTypeFontLoaderParameter();
 		parameter10.fontParameters.minFilter = Texture.TextureFilter.Nearest;
 		parameter10.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
-		parameter10.fontParameters.size = fontSize4;
+		parameter10.fontParameters.size = fontSize2;
 		parameter10.fontFileName = "Comfortaa_Regular.ttf";
 		manager.load("goca2.ttf", BitmapFont.class, parameter10);
+		
+		FreeTypeFontLoaderParameter parameter11 = new FreeTypeFontLoaderParameter();
+		parameter11.fontParameters.minFilter = Texture.TextureFilter.Nearest;
+		parameter11.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
+		parameter11.fontParameters.size = fontSize3;
+		parameter11.fontFileName = "Comfortaa_Regular.ttf";		
+		manager.load("goca3.ttf", BitmapFont.class, parameter11);
+		
+		FreeTypeFontLoaderParameter parameter12 = new FreeTypeFontLoaderParameter();
+		parameter12.fontParameters.minFilter = Texture.TextureFilter.Nearest;
+		parameter12.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
+		parameter12.fontParameters.size = fontSize4;
+		parameter12.fontFileName = "Comfortaa_Regular.ttf";
+		manager.load("goca4.ttf", BitmapFont.class, parameter12);
 		
 		fontSize1 = 20 * (int) screenWidth / 600;
 		fontSize2 = 27 * (int) screenWidth / 600;
 		fontSize3 = 34 * (int) screenWidth / 600;
 		fontSize4 = 38 * (int) screenWidth / 600;
-		FreeTypeFontLoaderParameter parameter11 = new FreeTypeFontLoaderParameter();
-		parameter11.fontParameters.minFilter = Texture.TextureFilter.Nearest;
-		parameter11.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
-		parameter11.fontParameters.size = fontSize1;
-		parameter11.fontFileName = "GOODDP__.TTF";		
-		manager.load("good1.ttf", BitmapFont.class, parameter11);
+		FreeTypeFontLoaderParameter parameter13 = new FreeTypeFontLoaderParameter();
+		parameter13.fontParameters.minFilter = Texture.TextureFilter.Nearest;
+		parameter13.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
+		parameter13.fontParameters.size = fontSize1;
+		parameter13.fontFileName = "GOODDP__.TTF";		
+		manager.load("good1.ttf", BitmapFont.class, parameter13);
 		
-		FreeTypeFontLoaderParameter parameter12 = new FreeTypeFontLoaderParameter();
-		parameter12.fontParameters.minFilter = Texture.TextureFilter.Nearest;
-		parameter12.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
-		parameter12.fontParameters.size = fontSize2;
-		parameter12.fontFileName = "GOODDP__.TTF";		
-		manager.load("good2.ttf", BitmapFont.class, parameter12);
+		FreeTypeFontLoaderParameter parameter14 = new FreeTypeFontLoaderParameter();
+		parameter14.fontParameters.minFilter = Texture.TextureFilter.Nearest;
+		parameter14.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
+		parameter14.fontParameters.size = fontSize2;
+		parameter14.fontFileName = "GOODDP__.TTF";		
+		manager.load("good2.ttf", BitmapFont.class, parameter14);
+		
+		FreeTypeFontLoaderParameter parameter15 = new FreeTypeFontLoaderParameter();
+		parameter15.fontParameters.minFilter = Texture.TextureFilter.Nearest;
+		parameter15.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
+		parameter15.fontParameters.size = fontSize3;
+		parameter15.fontFileName = "GOODDP__.TTF";		
+		manager.load("good3.ttf", BitmapFont.class, parameter15);
+		
+		FreeTypeFontLoaderParameter parameter16 = new FreeTypeFontLoaderParameter();
+		parameter16.fontParameters.minFilter = Texture.TextureFilter.Nearest;
+		parameter16.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
+		parameter16.fontParameters.size = fontSize4;
+		parameter16.fontFileName = "GOODDP__.TTF";		
+		manager.load("good4.ttf", BitmapFont.class, parameter16);
 	}
 	public void loadSplashFont() {
 		FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("UbuntuMono-R.ttf"));
@@ -312,5 +368,8 @@ public class AssetLoader {
 	}
 	public boolean update() {
 		return manager.update();
+	}
+	public void setBackground() {
+		background = backgrounds[MathUtils.random(0, 2)];
 	}
 }

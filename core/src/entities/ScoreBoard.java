@@ -27,8 +27,8 @@ public class ScoreBoard {
 		_fontPositionOffsetFraction = 0.0f;
 	}
 	public void render(SpriteBatch renderer, float cameraX, int score) {
-		_assetLoader.ubuntuFont[_assetLoader.MEDIUM_FONT].setColor(0.0f, 0.0f, 0.0f, _fontPositionOffsetFraction);
-		_assetLoader.ubuntuFont[_assetLoader.MEDIUM_FONT].draw(renderer, score + "", _screenWidth * 0.87f,
-				_screenHeight * 0.94f);
+		_assetLoader.ubuntuFont[_assetLoader.LARGE_FONT].setColor(0.0f, 0.0f, 0.0f, _fontPositionOffsetFraction);
+		_assetLoader.ubuntuFont[_assetLoader.LARGE_FONT].draw(renderer, score + "", _screenWidth * 0.5f,
+				_screenHeight * 0.91f);
 	}
 }
