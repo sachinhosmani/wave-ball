@@ -23,6 +23,7 @@ public class Button {
 	public float paddingFractionX;
 	public float boxWidth = 0.0f;
 	public float scale = 1.0f;
+	public float alpha = 1.0f;
 	public Button(float x, float y, String label, Color color, int id, BitmapFont font, float paddingFractionX) {
 		this.x = x;
 		this.y = y;
@@ -54,6 +55,11 @@ public class Button {
 		this.color = null;
 		centerX = x;
 		centerY = y;
+	}
+	
+	public Button(float x, float y, float w, float h, Sprite sprite, float alpha, int id) {
+		this(x, y, w, h, sprite, id);
+		this.alpha = alpha;
 	}
 
 	public boolean contains(float baseX, float baseY) {

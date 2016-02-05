@@ -34,6 +34,7 @@ import utils.BackgroundAnimation;
 import utils.Constants;
 import utils.InputHandler;
 import utils.PreferenceManager;
+import utils.SoundManager;
 import utils.TimeSnapshot;
 import utils.TimeSnapshotStore;
 import utils.WaveEquation;
@@ -82,6 +83,7 @@ public class WaveBall extends ApplicationAdapter {
 	
 	private ScoreCheckpoints _scoreCheckpoints;
 	
+	private SoundManager _soundManager;
 	private CrossRate _rate;
 	private CrossShare _share;
 	public static final int POINTS_PER_BALL = 3;
@@ -110,6 +112,7 @@ public class WaveBall extends ApplicationAdapter {
 
 		_assetLoader = new AssetLoader();
 		_assetLoader.load(screenWidth, screenHeight);
+		_soundManager = new SoundManager(_assetLoader);
 		
 		WaveEquation.initSize(screenWidth * 100, screenWidth / 1000.0f);
 		AccelerationManager.initSize(screenWidth * 100, screenWidth / 100.0f);
@@ -151,10 +154,12 @@ public class WaveBall extends ApplicationAdapter {
 				_backgroundAnimation = new BackgroundAnimation((_assetLoader.backgroundWidth - screenWidth) / 2, (_assetLoader.backgroundHeight - screenHeight) / 2);
 				
 				_assetLoader.ball = _assetLoader.balls[(int) _prefManager.getSelectedBall()];
+				_soundManager.changeMusic(_gameState);
 				System.out.println("loaded");
 			}
 			return;
 		}
+		_soundManager.update();
 		if (_gameState == GameState.PLAYING || _gameState == GameState.BALL_FALLING) {
 			Gdx.gl.glClearColor(0.9f, 0.9f, 0.9f, 1);
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT | (Gdx.graphics.getBufferFormat().coverageSampling ? GL20.GL_COVERAGE_BUFFER_BIT_NV : 0));
@@ -204,6 +209,7 @@ public class WaveBall extends ApplicationAdapter {
 				storeScores();
 				_scoreMenu.reset(wave.getScore(), (int) _prefManager.getMaxScore(), (int) _prefManager.getPoints());
 				_gameState = GameState.SCORE_MENU;
+				_soundManager.changeMusic(_gameState);
 			}
 		}
 	}
@@ -298,7 +304,7 @@ public class WaveBall extends ApplicationAdapter {
 		cameraX = 0.0f;
 		cameraY = 0.0f;
 		_scoreCheckpoints.init(_prefManager, screenWidth, screenHeight, _assetLoader);
-		if (Math.random() < 0.1) {
+		if (Math.random() < 0.3) {
 			_assetLoader.setBackground();
 		}
 	}
@@ -358,6 +364,7 @@ public class WaveBall extends ApplicationAdapter {
 			case ScoreMenu.PLAY:
 				restartGame();
 				_gameState = GameState.PLAYING;
+				_soundManager.changeMusic(_gameState);
 				break;
 			case ScoreMenu.RATE:
 				_rate.rate();
@@ -379,6 +386,7 @@ public class WaveBall extends ApplicationAdapter {
 			case TutorialMenu.PLAY:
 				restartGame();
 				_gameState = GameState.PLAYING;
+				_soundManager.changeMusic(_gameState);
 				break;
 			}
 		} else if (_gameState == GameState.BALL_CHOOSE) {
@@ -419,6 +427,7 @@ public class WaveBall extends ApplicationAdapter {
 			button.sprite.setOriginCenter();
 			button.sprite.setRotation(button.angle);
 			button.sprite.setBounds(button.x, button.y, width, height);
+			button.sprite.setAlpha(button.alpha);
 			button.sprite.draw(spriteBatch);
 		} else {
 			button.font.setColor(button.color);

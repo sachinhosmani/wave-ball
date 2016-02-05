@@ -1,5 +1,6 @@
 package menus;
 
+import java.awt.List;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -18,7 +19,7 @@ public class BallMenu extends Menu {
 	private int _maxBallUnlock = 0;
 	private ArrayList<ButtonAnimation> _animations = new ArrayList<ButtonAnimation>();
 	
-	private Button[] balls;
+	private ArrayList<Button> balls;
 	private float ballWidth;
 	
 	private Vector2 _homePositionStart = new Vector2();
@@ -34,7 +35,7 @@ public class BallMenu extends Menu {
 		_prefManager = prefManager;
 		float homeWidth = 0.1f;
 		
-		balls = new Button[assetLoader.NUM_BALLS];
+		balls = new ArrayList<Button>();
 		
 		_screenWidth = screenWidth;
 		_screenHeight = screenHeight;
@@ -61,13 +62,13 @@ public class BallMenu extends Menu {
 				pos.x = x;
 				if (count < assetLoader.NUM_BALLS) {
 					Sprite asset = (count <= _maxBallUnlock) ? assetLoader.balls[count] : assetLoader.lock;
-					balls[count] = addButton(pos, ballWidth, ballWidth, asset, BALL1 + count);
-					_animations.add(new ButtonLinearAnimation(balls[count], startPosition, pos, 500, screenWidth, screenHeight));
+					balls.add(addButton(pos, ballWidth, ballWidth, asset, BALL1 + count));
+					_animations.add(new ButtonLinearAnimation(balls.get(count), startPosition, pos, 500, screenWidth, screenHeight));
 				}
 				count++;
 			}
 		}
-		balls[(int) _prefManager.getSelectedBall()].scale(1.15f);
+		balls.get((int) _prefManager.getSelectedBall()).scale(1.15f);
 	}
 	public void update() {
 		for (ButtonAnimation animation: _animations) {
@@ -85,19 +86,21 @@ public class BallMenu extends Menu {
 	public void resetMaxBallUnlock() {
 		_maxBallUnlock = (int) _prefManager.getMaxBallUnlock();
 		_animations.remove(_unlockAnimation);
-		if (_maxBallUnlock + 1 < balls.length && _prefManager.getPoints() >= WaveBall.POINTS_PER_BALL) {
-			_unlockAnimation = new RotationAnimation(balls[_maxBallUnlock + 1], -15.0f, 15.0f, 500);
+		if (_maxBallUnlock + 1 < balls.size() && _prefManager.getPoints() >= WaveBall.POINTS_PER_BALL) {
+			_unlockAnimation = new RotationAnimation(balls.get(_maxBallUnlock + 1), -15.0f, 15.0f, 500);
 			_animations.add(_unlockAnimation);
 		}
-		if (_maxBallUnlock < balls.length) {
-			balls[_maxBallUnlock].sprite = _assetLoader.balls[_maxBallUnlock];
+		if (_maxBallUnlock < balls.size()) {
+			balls.get(_maxBallUnlock).sprite = _assetLoader.balls[_maxBallUnlock];
 		}
 	}
 	public void resetSelection() {
-		for (int i = 0; i <= _maxBallUnlock; i++) {
-			balls[i].sprite = _assetLoader.balls[i];
-			balls[i].resetScale();
+		for (int i = 0; i <= _maxBallUnlock && i < _assetLoader.balls.length; i++) {
+			balls.get(i).sprite = _assetLoader.balls[i];
+			balls.get(i).resetScale();
+			balls.get(i).alpha = 0.7f;
 		}
-		balls[(int) _prefManager.getSelectedBall()].scale(1.15f);
+		balls.get((int) _prefManager.getSelectedBall()).alpha = 1.0f;
+		balls.get((int) _prefManager.getSelectedBall()).scale(1.15f);
 	}
 }

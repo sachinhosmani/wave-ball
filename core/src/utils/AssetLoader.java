@@ -66,7 +66,8 @@ public class AssetLoader {
 	
 	public final int NUM_BALLS = 13;
 	public Sprite[] balls = new Sprite[NUM_BALLS];
-	
+
+	public Music gameMusic, menuMusic;
 	public void load(float screenWidth, float screenHeight) {
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
@@ -96,6 +97,9 @@ public class AssetLoader {
 		manager.load("home.png", Texture.class);
 		manager.load("lock.png", Texture.class);
 		
+		manager.load("menu_music.ogg", Music.class);
+		manager.load("game_music.ogg", Music.class);
+		
 		loadFonts();
 	}
 
@@ -119,6 +123,9 @@ public class AssetLoader {
 		line = new Sprite(manager.get("line.png", Texture.class));
 		home = new Sprite(manager.get("home.png", Texture.class));
 		lock = new Sprite(manager.get("lock.png", Texture.class));
+		
+		menuMusic = manager.get("menu_music.ogg", Music.class);
+		gameMusic = manager.get("game_music.ogg", Music.class);
 		
 		setBackground();
 		for (int i = 0; i < NUM_BALLS; i++) {
@@ -365,6 +372,8 @@ public class AssetLoader {
 		goodFont[MEDIUM_FONT].dispose();
 		goodFont[LARGE_FONT].dispose();
 		
+		gameMusic.dispose();
+		menuMusic.dispose();
 	}
 	public boolean update() {
 		return manager.update();
