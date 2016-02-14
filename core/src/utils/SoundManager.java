@@ -4,8 +4,8 @@ import com.wave.ball.WaveBall.GameState;
 
 public class SoundManager {
 	private AssetLoader _assetLoader;
-	private float _gameMusicVolume = 1.0f;
-	private float _menuMusicVolume = 1.0f;
+	private float _gameMusicVolume = 0.5f;
+	private float _menuMusicVolume = 0.3f;
 	private boolean _gameMusicVolumeDecreasing = false;
 	private boolean _menuMusicVolumeDecreasing = false;
 	public SoundManager(AssetLoader assetLoader) {
@@ -13,24 +13,31 @@ public class SoundManager {
 	}
 	public void changeMusic(GameState state) {
 		if (state == GameState.PLAYING) {
-			_gameMusicVolume = 1.0f;
+			_gameMusicVolume = 0.5f;
 			_assetLoader.gameMusic.setVolume(_gameMusicVolume);
-			_assetLoader.gameMusic.setLooping(true);
 			_assetLoader.gameMusic.play();
 			_menuMusicVolumeDecreasing = true;
 			_gameMusicVolumeDecreasing = false;
 		} else {
-			_menuMusicVolume = 0.7f;
+			_menuMusicVolume = 0.3f;
 			_assetLoader.menuMusic.setVolume(_menuMusicVolume);
-			_assetLoader.menuMusic.setLooping(true);
 			_assetLoader.menuMusic.play();
 			_gameMusicVolumeDecreasing = true;
 			_menuMusicVolumeDecreasing = false;
 		}
 	}
+	public void playWhoosh() {
+		_assetLoader.whooshSound.play();
+	}
+	public void playApplause() {
+		_assetLoader.applauseSound.play();
+	}
+	public void playButton() {
+		_assetLoader.buttonSound.play();
+	}
 	public void update() {
 		if (_gameMusicVolumeDecreasing) {
-			_gameMusicVolume -= 0.02f;
+			_gameMusicVolume -= 0.03f;
 		}
 		if (_menuMusicVolumeDecreasing) {
 			_menuMusicVolume -= 0.01f;

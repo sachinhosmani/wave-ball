@@ -45,7 +45,7 @@ public class CounterWave extends Wave {
 			enemy._speed = _accelerationManager.get(enemy._x);
 			_waveEquation.getDerivative(enemy._x, _tmpVector);
 			float x = enemy._x + (timeDiff * enemy._speed / 1000.0f) / _tmpVector.len() * _screenWidth / 750.0f;
-			_waveEquation.get(x, _tmpVector);
+			_waveEquation.get(x, _tmpVector, false);
 			float y = _tmpVector.y;
 			y = _screenHeight / 2.0f + (_screenHeight / 2.0f - y) / 2.0f;
 			enemy.updatePosition(x, y);

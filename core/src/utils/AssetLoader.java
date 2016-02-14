@@ -13,8 +13,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
@@ -22,7 +22,6 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
 import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader;
 import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader.FreeTypeFontLoaderParameter;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.I18NBundle;
 
 public class AssetLoader {
@@ -68,6 +67,8 @@ public class AssetLoader {
 	public Sprite[] balls = new Sprite[NUM_BALLS];
 
 	public Music gameMusic, menuMusic;
+	public Sound whooshSound, buttonSound, applauseSound, diamondSound, punchSound;
+	public ParticleEffect particleEffect;
 	public void load(float screenWidth, float screenHeight) {
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
@@ -99,6 +100,11 @@ public class AssetLoader {
 		
 		manager.load("menu_music.ogg", Music.class);
 		manager.load("game_music.ogg", Music.class);
+		manager.load("applause_sound.mp3", Sound.class);
+		manager.load("button_sound.mp3", Sound.class);
+		manager.load("whoosh_sound.mp3", Sound.class);
+		manager.load("goal.wav", Sound.class);
+		manager.load("punch.mp3", Sound.class);
 		
 		loadFonts();
 	}
@@ -126,6 +132,19 @@ public class AssetLoader {
 		
 		menuMusic = manager.get("menu_music.ogg", Music.class);
 		gameMusic = manager.get("game_music.ogg", Music.class);
+		applauseSound = manager.get("applause_sound.mp3", Sound.class);
+		whooshSound = manager.get("whoosh_sound.mp3", Sound.class);
+		buttonSound = manager.get("button_sound.mp3", Sound.class);
+		diamondSound = manager.get("goal.wav", Sound.class);
+		punchSound = manager.get("punch.mp3", Sound.class);
+		
+		particleEffect = new ParticleEffect();
+		particleEffect.load(Gdx.files.internal("particles"), Gdx.files.internal(""));
+		particleEffect.setPosition(screenWidth / 2.0f, screenHeight / 2.0f);
+		particleEffect.start();
+		
+		gameMusic.setLooping(true);
+		menuMusic.setLooping(true);
 		
 		setBackground();
 		for (int i = 0; i < NUM_BALLS; i++) {
@@ -374,6 +393,11 @@ public class AssetLoader {
 		
 		gameMusic.dispose();
 		menuMusic.dispose();
+		applauseSound.dispose();
+		buttonSound.dispose();
+		whooshSound.dispose();
+		diamondSound.dispose();
+		punchSound.dispose();
 	}
 	public boolean update() {
 		return manager.update();

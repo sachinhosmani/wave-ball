@@ -16,14 +16,15 @@ import utils.Acceleration;
 import utils.AssetLoader;
 import utils.Constants;
 import utils.PhaseClassifier;
+import utils.PreferenceManager;
 import utils.TimeSnapshot;
 import utils.TimeSnapshotStore;
 import utils.WaveEquation;
 
 public class MainWave extends Wave {
 	public LinkedList<Rotator> _rotators = new LinkedList<Rotator>();
-	protected float _ballX;
-	protected float _ballY;
+	public float _ballX;
+	public float _ballY;
 	protected float _radius;
 	protected boolean moving = false;
 	protected Acceleration _acceleration;
@@ -65,6 +66,9 @@ public class MainWave extends Wave {
 	private long _heroAnimTime;
 	private final long _heroAnimTotalTime = 1000;
 	private float _ballAlpha = 1.0f;
+	private boolean _whooshPlayed = false;
+	private boolean _applausePlayed = false;
+	private PreferenceManager _prefManager;
 
 	public float getBallX() {
 		return _ballX;
@@ -74,7 +78,7 @@ public class MainWave extends Wave {
 		return _waveEquation;
 	}
 	public MainWave(float phase, float amplitude, int frequency, float speed, float radius, float ballX,
-			float screenWidth, float screenHeight, Color color, ScoreBoard scoreBoard, ScoreCheckpoints checkpoints, AssetLoader assetLoader) {
+			float screenWidth, float screenHeight, Color color, ScoreBoard scoreBoard, ScoreCheckpoints checkpoints, PreferenceManager prefManager, AssetLoader assetLoader) {
 		super(phase, amplitude, speed, screenWidth, screenHeight, color, assetLoader);
 		_baseAngleDelta = 2 * ((float) Math.PI) / 700.0f;
 		_waveEquation = new WaveEquation(amplitude, _baseAngleDelta, screenWidth,
@@ -92,12 +96,13 @@ public class MainWave extends Wave {
 		_score = 0;
 		_points = 0;
 		_rotatorPositions = new LinkedList<Float>();
-		_rotatorSpeed = (float) Math.PI / 1200.0f;
+		_rotatorSpeed = (float) Math.PI / 1100.0f;
 		_diamonds = new ArrayList<CircleEntity>();
 		_heroMode = false;
 		_heroModeStartTime = 0;
 		_scoreBoard = scoreBoard;
 		_scoreCheckpoints = checkpoints;
+		_prefManager = prefManager;
 	}
 
 	public void update(float cameraX, GameState gameState) {
@@ -125,12 +130,12 @@ public class MainWave extends Wave {
 		_acceleration.update(timeElapsed);
 		if (gameState != GameState.BALL_FALLING) {
 			increasePhase(timeElapsed * _acceleration.getSpeed() / 1000 * (_heroMode ? 2.0f : 1.0f));
-			_waveEquation.get(_ballX, _tmpVector);
+			_waveEquation.get(_ballX, _tmpVector, true);
 			_ballY = _tmpVector.y;
 		} else {
 			_ballY += _screenWidth / 100.0f * Math.sin(-Constants.rotation);
 			_ballX += _screenWidth / 100.0f * Math.cos(-Constants.rotation);
-			_radius = Math.max(0.0f, _radius / 1.1f);
+			_radius = 0.0f;
 		}
 		
 		ballShape.x = _ballX;
@@ -175,11 +180,11 @@ public class MainWave extends Wave {
 	}
 
 	protected void addDiamond(float x) {
-		_waveEquation.get(x, _tmpVector);
+		_waveEquation.get(x, _tmpVector, true);
 		_diamonds.add(new CircleEntity(x, _tmpVector.y,  _diamondRadius, (float) _screenWidth / 2.0f, Type.DIAMOND));
 	}
 	protected void addHero(float x) {
-		_waveEquation.get(x, _tmpVector);
+		_waveEquation.get(x, _tmpVector, true);
 		_diamonds.add(new CircleEntity(x, _tmpVector.y,  _diamondRadius, (float) _screenWidth / 2.0f, Type.HERO));
 	}
 	private void tryRemoveDiamonds(float cameraX) {
@@ -227,10 +232,21 @@ public class MainWave extends Wave {
 		if (_rotatorPositions.size() == 0) {
 			return;
 		}
+		if (_ballX > _rotatorPositions.get(0) - _screenWidth / 30.0f && !_whooshPlayed) {
+			_assetLoader.whooshSound.play();
+			_whooshPlayed = true;
+		}
 		if (_ballX > _rotatorPositions.get(0) + _screenWidth / 30.0f) {
 			_score++;
 			_rotatorPositions.remove(0);
 			_scoreBoard.incrementScore();
+			_whooshPlayed = false;
+			_applausePlayed = false;
+		}
+		if (_prefManager.getMaxScore() > 0 && _score - 1 <= _prefManager.getMaxScore() &&
+				_score > _prefManager.getMaxScore() && !_applausePlayed) {
+			_assetLoader.applauseSound.play();
+			_applausePlayed = true;
 		}
 	}
 
@@ -257,7 +273,7 @@ public class MainWave extends Wave {
 		moving = false;
 	}
 	private void addRotator(float x, boolean multiple) {
-		_waveEquation.get(x, _tmpVector);
+		_waveEquation.get(x, _tmpVector, true);
 		boolean clockwise = rotatorClockwise(x);
 		_lastRotatorClockwise = clockwise;
 		boolean alternating = rotatorVaryingSpeed(multiple);
@@ -315,7 +331,7 @@ public class MainWave extends Wave {
 			return false;
 		}
 		if (_phaseClassifier.getPhase(_ballX) >= 2) {
-			return Math.random() > 0.7;
+			return Math.random() > 0.95;
 		}
 		return false;
 	}

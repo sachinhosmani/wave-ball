@@ -70,7 +70,7 @@ public class Wave {
 	public void render(SpriteBatch renderer, float cameraX, boolean opposite, Color color) {
 		float y = 0.0f;
 		float prevX = (_startX != null) ? _startX : Math.max(0.0f, cameraX - _screenWidth /10.0f);
-		_waveEquation.get(prevX, _tmpVector);
+		_waveEquation.get(prevX, _tmpVector, !opposite);
 		float prevY = _tmpVector.y;
 		if (opposite) {
 			prevY = _screenHeight / 2.0f + (_screenHeight / 2.0f - prevY) / 2.0f;
@@ -86,7 +86,7 @@ public class Wave {
 				firstTime = false;
 				prevX = x;
 			}
-			_waveEquation.get(x, _tmpVector);
+			_waveEquation.get(x, _tmpVector, !opposite);
 			y = _tmpVector.y;
 			if (opposite) {
 				y = _screenHeight / 2.0f + (_screenHeight / 2.0f - y) / 2.0f;

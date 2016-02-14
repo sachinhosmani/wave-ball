@@ -52,7 +52,7 @@ public class WaveBall extends ApplicationAdapter {
 	private float cameraX = 0.0f;
 	private float cameraY = 0.0f;
 	FPSLogger logger = new FPSLogger();
-	private final long FALLING_DURATION_TOTAL = 1000;
+	private final long FALLING_DURATION_TOTAL = 500;
 	private long _fallingDuration = 0;
 	
 	private TimeSnapshot _timeSnapshot = TimeSnapshotStore.get();
@@ -106,7 +106,7 @@ public class WaveBall extends ApplicationAdapter {
 		camSpeedNormal = (float) screenWidth / 4.25f;
 		
 		_ballSize = screenWidth / 35.0f;
-		_waveAmplitude = screenWidth / 12.0f;
+		_waveAmplitude = screenWidth / 10.0f;
 		_enemySize = screenWidth / 50.0f;
 		_counterWaveAmplitude = screenWidth / 18.0f;
 
@@ -118,8 +118,10 @@ public class WaveBall extends ApplicationAdapter {
 		AccelerationManager.initSize(screenWidth * 100, screenWidth / 100.0f);
 		_scoreBoard = new ScoreBoard(screenWidth, screenHeight, _assetLoader);
 		
+		_prefManager = new PreferenceManager();
+		
 		wave = new MainWave(0.0f, _waveAmplitude, 2, camSpeedNormal, _ballSize, screenWidth * _ballPositionFraction,
-				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _scoreBoard, _scoreCheckpoints, _assetLoader);
+				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _scoreBoard, _scoreCheckpoints, _prefManager, _assetLoader);
 		
 		counterWave = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
 				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation(), _assetLoader);
@@ -128,7 +130,6 @@ public class WaveBall extends ApplicationAdapter {
 		Gdx.input.setInputProcessor(inputHandler);
 		
 		_tmpVector = new Vector2();
-		_prefManager = new PreferenceManager();
 		_scoreCheckpoints = new ScoreCheckpoints();
 		_scoreCheckpoints.init(_prefManager, screenWidth, screenHeight, _assetLoader);
 	}
@@ -180,6 +181,11 @@ public class WaveBall extends ApplicationAdapter {
 				checkGameEnd();
 			}
 			_scoreCheckpoints.render(_spriteBatch, cam.position.x - screenWidth / 2.0f);
+			
+			if (_gameState == GameState.BALL_FALLING) {
+				_assetLoader.particleEffect.update(Gdx.graphics.getDeltaTime());
+				_assetLoader.particleEffect.draw(_spriteBatch);
+			}
 			_spriteBatch.setProjectionMatrix(fixedCam.combined);
 			_scoreBoard.update();
 			_scoreBoard.render(_spriteBatch, cameraX, wave.getScore());
@@ -227,6 +233,9 @@ public class WaveBall extends ApplicationAdapter {
 			_gameState = GameState.BALL_FALLING;
 			_timeSnapshot.snapshot();
 			_fallingDuration = 0;
+			startParticleEffect();
+			_assetLoader.punchSound.play();
+			return;
 		}
 		boolean found = false;
 		int collidingIndex = 0;
@@ -236,6 +245,8 @@ public class WaveBall extends ApplicationAdapter {
 					_gameState = GameState.BALL_FALLING;
 					_timeSnapshot.snapshot();
 					_fallingDuration = 0;
+					startParticleEffect();
+					_assetLoader.punchSound.play();
 					return;
 				}
 			}
@@ -243,6 +254,7 @@ public class WaveBall extends ApplicationAdapter {
 				counterWave.plusOne(enemy._x, enemy._y);
 				found = true;
 				wave.incrementPoints(1);
+				_assetLoader.diamondSound.play();
 			}
 			if (!found) {
 				collidingIndex++;
@@ -259,6 +271,8 @@ public class WaveBall extends ApplicationAdapter {
 					_gameState = GameState.BALL_FALLING;
 					_timeSnapshot.snapshot();
 					_fallingDuration = 0;
+					startParticleEffect();
+					_assetLoader.punchSound.play();
 					return;
 				}
 				if (!found) {
@@ -280,6 +294,7 @@ public class WaveBall extends ApplicationAdapter {
 				} else {
 					counterWave.plusOne(diamond._x, diamond._y);
 					wave.incrementPoints(1);
+					_assetLoader.diamondSound.play();
 				}
 				found = true;
 				break;
@@ -293,7 +308,7 @@ public class WaveBall extends ApplicationAdapter {
 	
 	public void restartGame() {
 		wave = new MainWave(0.0f, _waveAmplitude, 2, camSpeedNormal, _ballSize, screenWidth * _ballPositionFraction,
-				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _scoreBoard, _scoreCheckpoints, _assetLoader);
+				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _scoreBoard, _scoreCheckpoints, _prefManager, _assetLoader);
 		counterWave = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
 				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation(), _assetLoader);
 		counterWave.setWaveEquation(wave.getWaveEquation());
@@ -350,6 +365,7 @@ public class WaveBall extends ApplicationAdapter {
 				restartGame();
 				_tutorialMenu.reset();
 				_gameState = GameState.TUTORIAL;
+				_soundManager.playButton();
 				break;
 			case MainMenu.RATE:
 				_rate.rate();
@@ -357,6 +373,7 @@ public class WaveBall extends ApplicationAdapter {
 			case MainMenu.BALL:
 				_ballMenu.reset();
 				_gameState = GameState.BALL_CHOOSE;
+				_soundManager.playButton();
 				break;
 			}
 		} else if (_gameState == GameState.SCORE_MENU) {
@@ -365,6 +382,7 @@ public class WaveBall extends ApplicationAdapter {
 				restartGame();
 				_gameState = GameState.PLAYING;
 				_soundManager.changeMusic(_gameState);
+				_soundManager.playButton();
 				break;
 			case ScoreMenu.RATE:
 				_rate.rate();
@@ -375,10 +393,12 @@ public class WaveBall extends ApplicationAdapter {
 			case ScoreMenu.HOME:
 				_mainMenu.reset();
 				_gameState = GameState.MENU;
+				_soundManager.playButton();
 				break;
 			case ScoreMenu.BALL:
 				_ballMenu.reset();
 				_gameState = GameState.BALL_CHOOSE;
+				_soundManager.playButton();
 				break;
 			}
 		} else if (_gameState == GameState.TUTORIAL) {
@@ -387,6 +407,7 @@ public class WaveBall extends ApplicationAdapter {
 				restartGame();
 				_gameState = GameState.PLAYING;
 				_soundManager.changeMusic(_gameState);
+				_soundManager.playButton();
 				break;
 			}
 		} else if (_gameState == GameState.BALL_CHOOSE) {
@@ -394,6 +415,7 @@ public class WaveBall extends ApplicationAdapter {
 			case BallMenu.HOME:
 				_mainMenu.reset();
 				_gameState = GameState.MENU;
+				_soundManager.playButton();
 				break;
 			}
 			if (id == BallMenu.BALL1 + _prefManager.getMaxBallUnlock() + 1 && _prefManager.getPoints() >= POINTS_PER_BALL) {
@@ -401,6 +423,7 @@ public class WaveBall extends ApplicationAdapter {
 				_prefManager.setPoints(_prefManager.getPoints() - POINTS_PER_BALL);
 				_ballMenu.resetMaxBallUnlock();
 				_mainMenu.reset();
+				_soundManager.playButton();
 			} else if (id >= BallMenu.BALL1 && id <= BallMenu.BALL1 + _prefManager.getMaxBallUnlock()) {
 				_prefManager.setSelectedBall(id - BallMenu.BALL1);
 				_ballMenu.resetSelection();
@@ -408,6 +431,7 @@ public class WaveBall extends ApplicationAdapter {
 			}
 		}
 	}
+	
 	public void touchUp(float x, float y) {
 		if (!_assetsLoaded) {
 			return;
@@ -438,5 +462,14 @@ public class WaveBall extends ApplicationAdapter {
 	@Override
 	public void resume() {
 		TimeSnapshotStore.resume();
+	}
+	
+	public void startParticleEffect() {
+		_assetLoader.particleEffect.reset();
+		_tmpVector.x = wave._ballX - screenWidth / 2.0f;
+		_tmpVector.y = wave._ballY - screenHeight / 2.0f;
+		_tmpVector.rotate(Constants.rotation);
+		_assetLoader.particleEffect.setPosition(screenWidth / 2.0f + _tmpVector.x, screenHeight / 2.0f + _tmpVector.y);
+		_assetLoader.particleEffect.start();
 	}
 }

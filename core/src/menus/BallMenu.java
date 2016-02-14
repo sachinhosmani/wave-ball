@@ -45,7 +45,7 @@ public class BallMenu extends Menu {
 		_maxBallUnlock = maxBallUnlock;
 		
 		_homePositionStart.x = 0.0f;
-		_homePositionStart.y = 0.95f;
+		_homePositionStart.y = 0.93f;
 		
 		_homePositionEnd.x = 0.12f;
 		_homePositionEnd.y = _homePositionStart.y;

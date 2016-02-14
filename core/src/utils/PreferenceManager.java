@@ -60,7 +60,7 @@ public class PreferenceManager {
 		prefs.flush();
 	}
 	public long getLastScore() {
-		return prefs.getLong("last_score", -1);
+		return prefs.getLong("last_score", -10);
 	}
 	public void setLastScore(long val) {
 		prefs.putLong("last_score", val);

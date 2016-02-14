@@ -16,6 +16,7 @@ public class WaveEquation {
 	public Stack<Float> diamondPositions;
 	public Stack<Float> heroPositions;
 	private PhaseClassifier phaseClassifier;
+	private float _screenWidth;
 	public static void initSize(float aXMax, float aGranularity) {
 		xMax = aXMax;
 		granularity = aGranularity;
@@ -27,6 +28,7 @@ public class WaveEquation {
 	}
 	public WaveEquation(float baseAmplitude, float baseAngleDelta, float screenWidth,
 			float yBase, float angleRate, float amplitudeRate) {
+		_screenWidth = screenWidth;
 		int size = (int) (xMax / granularity);
 		rotatorPositions = new Stack<Float>();
 		rotatorMultiple = new Stack<Boolean>();
@@ -144,12 +146,13 @@ public class WaveEquation {
 	private float waveEquation(float angle, float amplitude) {
 		return (float) Math.sin(angle) * amplitude;
 	}
-	public void get(float x, Vector2 out) {
+	public void get(float x, Vector2 out, boolean main) {
 		while (x >= xMax) {
 			x -= xMax;
 		}
 		try {
 			spline.valueAt(out, x / xMax);
+			out.y += _screenWidth / 8.0f * Math.sin(Math.sin(x / _screenWidth / 10.0f) * x / _screenWidth * 2.0f) * (main ? 1 : -2);
 		} catch (Exception e) {
 			System.out.println(e);
 		}
