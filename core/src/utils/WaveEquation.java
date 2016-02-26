@@ -94,7 +94,7 @@ public class WaveEquation {
 //			}
 			if (first && !second && Math.abs(x - lastRotatorX - screenWidth / 7.0f) < screenWidth / 50.0f &&
 					phaseClassifier.getPhase(x) >= 3 &&
-					Math.abs(lastAngle - angle) < maxAngleDiff) {
+					Math.abs(lastAngle - angle) < maxAngleDiff && false) {
 				rotatorPositions.add(0, x);
 				rotatorMultiple.remove(0);
 				rotatorMultiple.add(0, true);
@@ -146,13 +146,13 @@ public class WaveEquation {
 	private float waveEquation(float angle, float amplitude) {
 		return (float) Math.sin(angle) * amplitude;
 	}
-	public void get(float x, Vector2 out, boolean main) {
+	public void get(float x, Vector2 out, boolean main, int num) {
 		while (x >= xMax) {
 			x -= xMax;
 		}
 		try {
 			spline.valueAt(out, x / xMax);
-			out.y += _screenWidth / 8.0f * Math.sin(Math.sin(x / _screenWidth / 10.0f) * x / _screenWidth * 2.0f) * (main ? 1 : -2);
+			out.y += _screenWidth / 8.0f * Math.sin(Math.sin(x / _screenWidth / 10.0f) * x / _screenWidth * 2.0f) * (main ? 1 : (num == 1 ? -(2.0f / 0.85f) : -(1.0f / 1.35f)));
 		} catch (Exception e) {
 			System.out.println(e);
 		}

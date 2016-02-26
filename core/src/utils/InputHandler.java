@@ -42,6 +42,9 @@ public class InputHandler implements InputProcessor {
     	if (keycode == Input.Keys.RIGHT) {
     		_game.touchUp(0, 0);
     	}
+    	if (keycode == Input.Keys.BACK) {
+    		return true;
+    	}
     	return true;
     }
 

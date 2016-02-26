@@ -1,5 +1,6 @@
 package utils;
 
+import java.util.ArrayList;
 import java.util.Locale;
 
 import com.badlogic.gdx.Gdx;
@@ -15,6 +16,7 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
@@ -28,8 +30,8 @@ public class AssetLoader {
 	public AssetManager manager = new AssetManager();
 	
 	public Sprite ball, enemy;
-	public Sprite diamond, hero;
-	public Sprite wave1, wave2, shadow;
+	public Sprite diamond;
+	public Sprite wave1, wave2;
 	public Sprite beam;
 	public Sprite background;
 	public Sprite plusOne;
@@ -55,7 +57,6 @@ public class AssetLoader {
 	public BitmapFont[] gocaFont = new BitmapFont[4];
 	public BitmapFont[] goodFont = new BitmapFont[4];
 
-	public TextureRegion[] diamonds = new TextureRegion[7];
 	public Animation diamondAnimation;
 	public BitmapFont splashFont;
 	
@@ -63,43 +64,33 @@ public class AssetLoader {
 	
 	public float backgroundWidth, backgroundHeight;
 	
-	public final int NUM_BALLS = 13;
+	public final int NUM_BALLS = 12;
 	public Sprite[] balls = new Sprite[NUM_BALLS];
 
-	public Music gameMusic, menuMusic;
+	public Music gameMusic;
 	public Sound whooshSound, buttonSound, applauseSound, diamondSound, punchSound;
 	public ParticleEffect particleEffect;
 	public void load(float screenWidth, float screenHeight) {
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
 		
+		if (screenWidth <= 1500) {
+			manager.load("small/small.txt", TextureAtlas.class);
+		} else {
+			manager.load("large/large.txt", TextureAtlas.class);
+		}
 		for (int i = 0; i < NUM_BALLS; i++) {
 			manager.load("balls/ball" + i + ".png", Texture.class);
 		}
 		
-		manager.load("diamond.png", Texture.class);
-		manager.load("wave1.png", Texture.class);
-		manager.load("wave2.png", Texture.class);
-		manager.load("shadow.png", Texture.class);
-		manager.load("enemy.png", Texture.class);
-		manager.load("beam.png", Texture.class);
-		manager.load("star.png", Texture.class);
 		manager.load("background1.png", Texture.class);
 		manager.load("background2.png", Texture.class);
 		manager.load("background3.png", Texture.class);
-		manager.load("+1.png", Texture.class);
-		manager.load("play.png", Texture.class);
-		manager.load("title.png", Texture.class);
-		manager.load("share.png", Texture.class);
-		manager.load("rate.png", Texture.class);
-		manager.load("diamond.png", Texture.class);
 		manager.load("tutorial.png", Texture.class);
-		manager.load("line.png", Texture.class);
-		manager.load("home.png", Texture.class);
-		manager.load("lock.png", Texture.class);
+		manager.load("wave1.png", Texture.class);
+		manager.load("wave2.png", Texture.class);
 		
-		manager.load("menu_music.ogg", Music.class);
-		manager.load("game_music.ogg", Music.class);
+		manager.load("music.wav", Music.class);
 		manager.load("applause_sound.mp3", Sound.class);
 		manager.load("button_sound.mp3", Sound.class);
 		manager.load("whoosh_sound.mp3", Sound.class);
@@ -110,28 +101,31 @@ public class AssetLoader {
 	}
 
 	public void assignAssets() {
-		diamond = new Sprite(manager.get("diamond.png", Texture.class));
-		hero = new Sprite(manager.get("star.png", Texture.class));
-		enemy = new Sprite(manager.get("enemy.png", Texture.class));
-		beam = new Sprite(manager.get("beam.png", Texture.class));
 		backgrounds[0] = new Sprite(manager.get("background1.png", Texture.class));
 		backgrounds[1] = new Sprite(manager.get("background2.png", Texture.class));
 		backgrounds[2] = new Sprite(manager.get("background3.png", Texture.class));
+		tutorial = new Sprite(manager.get("tutorial.png", Texture.class));
+		TextureAtlas spriteSheet;
+		if (screenWidth <= 1500) {
+			spriteSheet = manager.get("small/small.txt", TextureAtlas.class);
+		} else {
+			spriteSheet = manager.get("large/large.txt", TextureAtlas.class);
+		}
+		diamond = spriteSheet.createSprite("diamond");
+		enemy = spriteSheet.createSprite("enemy");
+		beam = spriteSheet.createSprite("beam");
 		wave1 = new Sprite(manager.get("wave1.png", Texture.class));
 		wave2 = new Sprite(manager.get("wave2.png", Texture.class));
-		shadow = new Sprite(manager.get("shadow.png", Texture.class));
-		plusOne = new Sprite(manager.get("+1.png", Texture.class));
-		play = new Sprite(manager.get("play.png", Texture.class));
-		title = new Sprite(manager.get("title.png", Texture.class));
-		share = new Sprite(manager.get("share.png", Texture.class));
-		rate = new Sprite(manager.get("rate.png", Texture.class));
-		tutorial = new Sprite(manager.get("tutorial.png", Texture.class));
-		line = new Sprite(manager.get("line.png", Texture.class));
-		home = new Sprite(manager.get("home.png", Texture.class));
-		lock = new Sprite(manager.get("lock.png", Texture.class));
+		plusOne = spriteSheet.createSprite("+1");
+		play = spriteSheet.createSprite("play");
+		title = spriteSheet.createSprite("title");
+		share = spriteSheet.createSprite("share");
+		rate = spriteSheet.createSprite("rate");
+		line = spriteSheet.createSprite("line");
+		home = spriteSheet.createSprite("home");
+		lock = spriteSheet.createSprite("lock");
 		
-		menuMusic = manager.get("menu_music.ogg", Music.class);
-		gameMusic = manager.get("game_music.ogg", Music.class);
+		gameMusic = manager.get("music.wav", Music.class);
 		applauseSound = manager.get("applause_sound.mp3", Sound.class);
 		whooshSound = manager.get("whoosh_sound.mp3", Sound.class);
 		buttonSound = manager.get("button_sound.mp3", Sound.class);
@@ -144,26 +138,22 @@ public class AssetLoader {
 		particleEffect.start();
 		
 		gameMusic.setLooping(true);
-		menuMusic.setLooping(true);
+		gameMusic.setVolume(0.3f);
 		
 		setBackground();
 		for (int i = 0; i < NUM_BALLS; i++) {
-			balls[i] = new Sprite(manager.get("balls/ball" + i + ".png", Texture.class));
+			balls[i] = spriteSheet.createSprite("ball" + i);
 			balls[i].getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		}
 		ball = balls[0];
 		
-		diamondAnimation = new Animation(0.09f, diamonds);
-		
 		ball.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		diamond.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		hero.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		enemy.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		beam.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		background.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		wave1.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		wave2.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		shadow.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		plusOne.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		play.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		title.getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
@@ -232,68 +222,68 @@ public class AssetLoader {
 		FileHandleResolver resolver = new InternalFileHandleResolver();
 		manager.setLoader(FreeTypeFontGenerator.class, new FreeTypeFontGeneratorLoader(resolver));
 		manager.setLoader(BitmapFont.class, ".ttf", new FreetypeFontLoader(resolver));
-		fontSize1 = 40 * (int) screenWidth / 600;
-		fontSize2 = 60 * (int) screenWidth / 600;
+		fontSize1 = 37 * (int) screenWidth / 600;
+		fontSize2 = 48 * (int) screenWidth / 600;
 		fontSize3 = 70 * (int) screenWidth / 600;
 		fontSize4 = 90 * (int) screenWidth / 600;
 		FreeTypeFontLoaderParameter parameter1 = new FreeTypeFontLoaderParameter();
 		parameter1.fontParameters.minFilter = Texture.TextureFilter.Nearest;
 		parameter1.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
 		parameter1.fontParameters.size = fontSize1;
-		parameter1.fontFileName = "UbuntuMono-R.ttf";
+		parameter1.fontFileName = "Exo2.0-Light.ttf";
 		manager.load("ubuntu1.ttf", BitmapFont.class, parameter1);
 		
 		FreeTypeFontLoaderParameter parameter2 = new FreeTypeFontLoaderParameter();
 		parameter2.fontParameters.minFilter = Texture.TextureFilter.Nearest;
 		parameter2.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
 		parameter2.fontParameters.size = fontSize2;
-		parameter2.fontFileName = "UbuntuMono-R.ttf";
+		parameter2.fontFileName = "Exo2.0-Light.ttf";
 		manager.load("ubuntu2.ttf", BitmapFont.class, parameter2);
 		
 		FreeTypeFontLoaderParameter parameter3 = new FreeTypeFontLoaderParameter();
 		parameter3.fontParameters.minFilter = Texture.TextureFilter.Nearest;
 		parameter3.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
 		parameter3.fontParameters.size = fontSize3;
-		parameter3.fontFileName = "UbuntuMono-R.ttf";
+		parameter3.fontFileName = "Exo2.0-Light.ttf";
 		manager.load("ubuntu3.ttf", BitmapFont.class, parameter3);
 		
 		FreeTypeFontLoaderParameter parameter4 = new FreeTypeFontLoaderParameter();
 		parameter4.fontParameters.minFilter = Texture.TextureFilter.Nearest;
 		parameter4.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
 		parameter4.fontParameters.size = fontSize4;
-		parameter4.fontFileName = "UbuntuMono-R.ttf";
+		parameter4.fontFileName = "Exo2.0-Light.ttf";
 		manager.load("ubuntu4.ttf", BitmapFont.class, parameter4);
 		
 		fontSize1 = 22 * (int) screenWidth / 600;
-		fontSize2 = 27 * (int) screenWidth / 600;
-		fontSize3 = 32 * (int) screenWidth / 600;
-		fontSize4 = 36 * (int) screenWidth / 600;
+		fontSize2 = 30 * (int) screenWidth / 600;
+		fontSize3 = 36 * (int) screenWidth / 600;
+		fontSize4 = 38 * (int) screenWidth / 600;
 		FreeTypeFontLoaderParameter parameter5 = new FreeTypeFontLoaderParameter();
 		parameter5.fontParameters.minFilter = Texture.TextureFilter.Nearest;
 		parameter5.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
 		parameter5.fontParameters.size = fontSize1;
-		parameter5.fontFileName = "good times rg.ttf";		
+		parameter5.fontFileName = "expressway_rg.ttf";		
 		manager.load("other1.ttf", BitmapFont.class, parameter5);
 		
 		FreeTypeFontLoaderParameter parameter6 = new FreeTypeFontLoaderParameter();
 		parameter6.fontParameters.minFilter = Texture.TextureFilter.Nearest;
 		parameter6.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
 		parameter6.fontParameters.size = fontSize2;
-		parameter6.fontFileName = "good times rg.ttf";		
+		parameter6.fontFileName = "expressway_rg.ttf";		
 		manager.load("other2.ttf", BitmapFont.class, parameter6);
 		
 		FreeTypeFontLoaderParameter parameter7 = new FreeTypeFontLoaderParameter();
 		parameter7.fontParameters.minFilter = Texture.TextureFilter.Nearest;
 		parameter7.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
 		parameter7.fontParameters.size = fontSize3;
-		parameter7.fontFileName = "good times rg.ttf";		
+		parameter7.fontFileName = "expressway_rg.ttf";		
 		manager.load("other3.ttf", BitmapFont.class, parameter7);
 		
 		FreeTypeFontLoaderParameter parameter8 = new FreeTypeFontLoaderParameter();
 		parameter8.fontParameters.minFilter = Texture.TextureFilter.Nearest;
 		parameter8.fontParameters.magFilter = Texture.TextureFilter.MipMapLinearNearest;
 		parameter8.fontParameters.size = fontSize4;
-		parameter8.fontFileName = "good times rg.ttf";		
+		parameter8.fontFileName = "expressway_rg.ttf";		
 		manager.load("other4.ttf", BitmapFont.class, parameter8);
 		
 		fontSize1 = 20 * (int) screenWidth / 600;
@@ -362,15 +352,15 @@ public class AssetLoader {
 		manager.load("good4.ttf", BitmapFont.class, parameter16);
 	}
 	public void loadSplashFont() {
-		FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("UbuntuMono-R.ttf"));
+		FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("hemi_head_bd_it.ttf"));
 		FreeTypeFontParameter parameter = new FreeTypeFontParameter();
 		parameter.minFilter = Texture.TextureFilter.Nearest;
 		parameter.magFilter = Texture.TextureFilter.MipMapLinearNearest;
-		parameter.size = fontSize1;
+		parameter.size = 80 * (int) screenWidth / 600;;
 		splashFont = generator.generateFont(parameter);
 
 		splashFont.getRegion().getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		splashFont.getData().setScale(1.0f, -1.0f);
+		splashFont.getData().setScale(1.0f, 1.0f);
 		generator.dispose();
 	}
 	public void dispose() {
@@ -392,7 +382,6 @@ public class AssetLoader {
 		goodFont[LARGE_FONT].dispose();
 		
 		gameMusic.dispose();
-		menuMusic.dispose();
 		applauseSound.dispose();
 		buttonSound.dispose();
 		whooshSound.dispose();

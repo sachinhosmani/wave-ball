@@ -89,14 +89,14 @@ public class MainWave extends Wave {
 		ballShape = new Circle(0.0f, 0.0f, _radius);
 		_startX = 0.0f;
 		camSpeedTrailing = (float) screenWidth / 6.0f;
-		rotatorWidth = _screenWidth / 9.0f;
+		rotatorWidth = _screenWidth / 8.7f;
 		_phaseClassifier = new PhaseClassifier(screenWidth);
 		_ballMaxSpeed = speed;
 		_ballMaxBoostedSpeed = speed * 1.5f;
 		_score = 0;
 		_points = 0;
 		_rotatorPositions = new LinkedList<Float>();
-		_rotatorSpeed = (float) Math.PI / 1100.0f;
+		_rotatorSpeed = (float) Math.PI / 1160.0f;
 		_diamonds = new ArrayList<CircleEntity>();
 		_heroMode = false;
 		_heroModeStartTime = 0;
@@ -130,7 +130,7 @@ public class MainWave extends Wave {
 		_acceleration.update(timeElapsed);
 		if (gameState != GameState.BALL_FALLING) {
 			increasePhase(timeElapsed * _acceleration.getSpeed() / 1000 * (_heroMode ? 2.0f : 1.0f));
-			_waveEquation.get(_ballX, _tmpVector, true);
+			_waveEquation.get(_ballX, _tmpVector, true, 0);
 			_ballY = _tmpVector.y;
 		} else {
 			_ballY += _screenWidth / 100.0f * Math.sin(-Constants.rotation);
@@ -180,11 +180,11 @@ public class MainWave extends Wave {
 	}
 
 	protected void addDiamond(float x) {
-		_waveEquation.get(x, _tmpVector, true);
+		_waveEquation.get(x, _tmpVector, true, 0);
 		_diamonds.add(new CircleEntity(x, _tmpVector.y,  _diamondRadius, (float) _screenWidth / 2.0f, Type.DIAMOND));
 	}
 	protected void addHero(float x) {
-		_waveEquation.get(x, _tmpVector, true);
+		_waveEquation.get(x, _tmpVector, true, 0);
 		_diamonds.add(new CircleEntity(x, _tmpVector.y,  _diamondRadius, (float) _screenWidth / 2.0f, Type.HERO));
 	}
 	private void tryRemoveDiamonds(float cameraX) {
@@ -212,7 +212,7 @@ public class MainWave extends Wave {
 	
 	public void incrementPoints(int increment) {
 		_points += increment;
-		_score += increment;
+//		_score += increment;
 	}
 	
 	public int getPoints() {
@@ -237,7 +237,6 @@ public class MainWave extends Wave {
 			_whooshPlayed = true;
 		}
 		if (_ballX > _rotatorPositions.get(0) + _screenWidth / 30.0f) {
-			_score++;
 			_rotatorPositions.remove(0);
 			_scoreBoard.incrementScore();
 			_whooshPlayed = false;
@@ -248,6 +247,7 @@ public class MainWave extends Wave {
 			_assetLoader.applauseSound.play();
 			_applausePlayed = true;
 		}
+		_score = getScoreFromBallX(_ballX, _screenWidth);
 	}
 
 	public void render(SpriteBatch renderer, float cameraX) {
@@ -273,7 +273,7 @@ public class MainWave extends Wave {
 		moving = false;
 	}
 	private void addRotator(float x, boolean multiple) {
-		_waveEquation.get(x, _tmpVector, true);
+		_waveEquation.get(x, _tmpVector, true, 0);
 		boolean clockwise = rotatorClockwise(x);
 		_lastRotatorClockwise = clockwise;
 		boolean alternating = rotatorVaryingSpeed(multiple);
@@ -376,8 +376,8 @@ public class MainWave extends Wave {
 			_tmpVector.rotate(Constants.rotation);
 			
 			float size = _screenWidth / 25.0f * (0.3f + 0.7f * fraction);
-			_assetLoader.hero.setBounds(_tmpVector.x + _screenWidth / 2.0f, _tmpVector.y + _screenHeight / 2.0f, size,  size);
-			_assetLoader.hero.draw(batcher);
+//			_assetLoader.hero.setBounds(_tmpVector.x + _screenWidth / 2.0f, _tmpVector.y + _screenHeight / 2.0f, size,  size);
+//			_assetLoader.hero.draw(batcher);
 		}
 	}
 }

@@ -52,7 +52,7 @@ public class Rotator {
 		_screenWidth = screenWidth;
 		_screenHeight = screenHeight;
 		float rotatorLength = _screenWidth / 22.0f;
-		_rotatorGirth = rotatorLength / 2.6666f;
+		_rotatorGirth = rotatorLength / 2.0f;
 		point1 = new Vector2(-rotatorLength / 2.0f, -rotatorWidth / 2.0f);
 		point2 = new Vector2(rotatorLength / 2.0f, -rotatorWidth / 2.0f);
 		point3 = new Vector2(-rotatorLength / 2.0f, rotatorWidth / 2.0f);

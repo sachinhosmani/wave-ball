@@ -8,9 +8,11 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
 import cross.CrossRate;
@@ -47,6 +49,7 @@ public class WaveBall extends ApplicationAdapter {
 	private float screenHeight;
 	private MainWave wave;
 	private CounterWave counterWave;
+	private CounterWave counterWave2;
 	private InputHandler inputHandler;
 	private float camSpeedNormal;
 	private float cameraX = 0.0f;
@@ -65,7 +68,7 @@ public class WaveBall extends ApplicationAdapter {
 	private boolean _assetsLoaded = false;
 	private AssetLoader _assetLoader;
 	
-	private final float _ballPositionFraction = 0.4f;
+	public static final float _ballPositionFraction = 0.4f;
 	private SpriteBatch _spriteBatch;
 	boolean collided = false;
 	public enum GameState {
@@ -87,6 +90,14 @@ public class WaveBall extends ApplicationAdapter {
 	private CrossRate _rate;
 	private CrossShare _share;
 	public static final int POINTS_PER_BALL = 3;
+	private float _loadingWidth, _loadingHeight;
+	private float _companyWidth, _companyHeight;
+	private float _alpha = 0.0f;
+	private float _enemyFrequency;
+	private float _enemyFrequencyFraction;
+	private float _lastEnemy1 = 0.0f;
+	private float _lastEnemy2 = 0.0f;
+	private boolean _secondWave = false;
 	public WaveBall(CrossRate rate, CrossShare share) {
 		_rate = rate;
 		_share = share;
@@ -124,14 +135,29 @@ public class WaveBall extends ApplicationAdapter {
 				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _scoreBoard, _scoreCheckpoints, _prefManager, _assetLoader);
 		
 		counterWave = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
-				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation(), _assetLoader);
+				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation(), 1, _assetLoader);
+		counterWave2 = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
+				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation(), 2, _assetLoader);
 		counterWave.setWaveEquation(wave.getWaveEquation());
+		counterWave2.setWaveEquation(wave.getWaveEquation());
 		inputHandler = new InputHandler(screenWidth, screenHeight, this);
 		Gdx.input.setInputProcessor(inputHandler);
 		
 		_tmpVector = new Vector2();
 		_scoreCheckpoints = new ScoreCheckpoints();
 		_scoreCheckpoints.init(_prefManager, screenWidth, screenHeight, _assetLoader);
+		
+		_assetLoader.loadSplashFont();
+		GlyphLayout bounds = new GlyphLayout();
+		bounds.setText(_assetLoader.splashFont, "loading");
+		_loadingWidth = bounds.width;
+		_loadingHeight = bounds.height;
+		bounds.setText(_assetLoader.splashFont, "Apple Gloss");
+		_companyWidth = bounds.width;
+		_companyHeight = bounds.height;
+		
+		_enemyFrequency = screenWidth / 1.2f;
+		_enemyFrequencyFraction = MathUtils.randomTriangular(0.7f, 1.0f);
 	}
 
 	@Override
@@ -157,6 +183,13 @@ public class WaveBall extends ApplicationAdapter {
 				_assetLoader.ball = _assetLoader.balls[(int) _prefManager.getSelectedBall()];
 				_soundManager.changeMusic(_gameState);
 				System.out.println("loaded");
+			} else {
+				Gdx.gl.glClearColor(0.8f, 0.0f, 0.0f, 0.5f);
+				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT | (Gdx.graphics.getBufferFormat().coverageSampling ? GL20.GL_COVERAGE_BUFFER_BIT_NV : 0));
+				_spriteBatch.begin();
+				_assetLoader.splashFont.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+				_assetLoader.splashFont.draw(_spriteBatch, "Apple Gloss", screenWidth / 2.0f - _companyWidth / 2.0f, 2 * screenHeight / 3.0f + _loadingHeight / 2.0f);
+				_spriteBatch.end();
 			}
 			return;
 		}
@@ -175,6 +208,10 @@ public class WaveBall extends ApplicationAdapter {
 			
 			counterWave.render(_spriteBatch, cameraX);
 			counterWave.update(cameraX);
+			if (_secondWave) {
+	 			counterWave2.render(_spriteBatch, cameraX);
+				counterWave2.update(cameraX);
+			}
 			wave.render(_spriteBatch, cameraX);
 			wave.update(cameraX, _gameState);
 			if (_gameState == GameState.PLAYING) {
@@ -191,6 +228,9 @@ public class WaveBall extends ApplicationAdapter {
 			_scoreBoard.render(_spriteBatch, cameraX, wave.getScore());
 			_spriteBatch.end();
 			Gdx.gl.glDisable(GL20.GL_BLEND);
+			
+			tryAddNewWave();
+			tryAddEnemies();
 		} else {
 			Gdx.gl.glClearColor(0.9f, 0.9f, 0.9f, 1);
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT | (Gdx.graphics.getBufferFormat().coverageSampling ? GL20.GL_COVERAGE_BUFFER_BIT_NV : 0));
@@ -215,9 +255,11 @@ public class WaveBall extends ApplicationAdapter {
 				storeScores();
 				_scoreMenu.reset(wave.getScore(), (int) _prefManager.getMaxScore(), (int) _prefManager.getPoints());
 				_gameState = GameState.SCORE_MENU;
+				_alpha = 0.0f;
 				_soundManager.changeMusic(_gameState);
 			}
 		}
+		_alpha += 0.03f;
 	}
 
 	public void drawBackground(OrthographicCamera cam) {
@@ -310,18 +352,25 @@ public class WaveBall extends ApplicationAdapter {
 		wave = new MainWave(0.0f, _waveAmplitude, 2, camSpeedNormal, _ballSize, screenWidth * _ballPositionFraction,
 				screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), _scoreBoard, _scoreCheckpoints, _prefManager, _assetLoader);
 		counterWave = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
-				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation(), _assetLoader);
+				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation(), 1, _assetLoader);
+		counterWave2 = new CounterWave((float) (Math.PI), _counterWaveAmplitude, camSpeedNormal, _enemySize,
+				screenWidth / 3.0f, screenWidth, screenHeight, new Color(0.0f, 1.0f, 0.0f, 0.5f), wave.getWaveEquation(), 2, _assetLoader);
 		counterWave.setWaveEquation(wave.getWaveEquation());
+		counterWave2.setWaveEquation(wave.getWaveEquation());
 		_tmpVector.x = -cameraX;
 		_tmpVector.y = 0.0f;
 		_tmpVector.rotate(Constants.rotation);
 		cam.translate(_tmpVector.x, _tmpVector.y);
 		cameraX = 0.0f;
 		cameraY = 0.0f;
+		_lastEnemy1 = 0.0f;
+		_secondWave = false;
 		_scoreCheckpoints.init(_prefManager, screenWidth, screenHeight, _assetLoader);
 		if (Math.random() < 0.3) {
 			_assetLoader.setBackground();
 		}
+		_enemyFrequency = screenWidth / 1.2f;
+		_enemyFrequencyFraction = MathUtils.randomTriangular(0.7f, 1.0f);
 	}
 	
 	private void storeScores() {
@@ -366,6 +415,7 @@ public class WaveBall extends ApplicationAdapter {
 				_tutorialMenu.reset();
 				_gameState = GameState.TUTORIAL;
 				_soundManager.playButton();
+				_alpha = 0.0f;
 				break;
 			case MainMenu.RATE:
 				_rate.rate();
@@ -374,6 +424,7 @@ public class WaveBall extends ApplicationAdapter {
 				_ballMenu.reset();
 				_gameState = GameState.BALL_CHOOSE;
 				_soundManager.playButton();
+				_alpha = 0.0f;
 				break;
 			}
 		} else if (_gameState == GameState.SCORE_MENU) {
@@ -383,6 +434,7 @@ public class WaveBall extends ApplicationAdapter {
 				_gameState = GameState.PLAYING;
 				_soundManager.changeMusic(_gameState);
 				_soundManager.playButton();
+				_alpha = 0.0f;
 				break;
 			case ScoreMenu.RATE:
 				_rate.rate();
@@ -394,11 +446,13 @@ public class WaveBall extends ApplicationAdapter {
 				_mainMenu.reset();
 				_gameState = GameState.MENU;
 				_soundManager.playButton();
+				_alpha = 0.0f;
 				break;
 			case ScoreMenu.BALL:
 				_ballMenu.reset();
 				_gameState = GameState.BALL_CHOOSE;
 				_soundManager.playButton();
+				_alpha = 0.0f;
 				break;
 			}
 		} else if (_gameState == GameState.TUTORIAL) {
@@ -416,6 +470,7 @@ public class WaveBall extends ApplicationAdapter {
 				_mainMenu.reset();
 				_gameState = GameState.MENU;
 				_soundManager.playButton();
+				_alpha = 0.0f;
 				break;
 			}
 			if (id == BallMenu.BALL1 + _prefManager.getMaxBallUnlock() + 1 && _prefManager.getPoints() >= POINTS_PER_BALL) {
@@ -451,10 +506,10 @@ public class WaveBall extends ApplicationAdapter {
 			button.sprite.setOriginCenter();
 			button.sprite.setRotation(button.angle);
 			button.sprite.setBounds(button.x, button.y, width, height);
-			button.sprite.setAlpha(button.alpha);
+			button.sprite.setAlpha(Math.min(button.alpha, _alpha));
 			button.sprite.draw(spriteBatch);
 		} else {
-			button.font.setColor(button.color);
+			button.font.setColor(0.0f, 0.0f, 0.0f, Math.min(0.85f, _alpha));
 			button.font.draw(spriteBatch, button.label, button.x, button.y);
 		}
 	}
@@ -471,5 +526,37 @@ public class WaveBall extends ApplicationAdapter {
 		_tmpVector.rotate(Constants.rotation);
 		_assetLoader.particleEffect.setPosition(screenWidth / 2.0f + _tmpVector.x, screenHeight / 2.0f + _tmpVector.y);
 		_assetLoader.particleEffect.start();
+	}
+	
+	private void tryAddNewWave() {
+		if (cameraX > 10 * screenWidth && !_secondWave) {
+			counterWave2.setMinX(cameraX + screenWidth);
+			_enemyFrequency = _enemyFrequency * 0.8f;
+			_secondWave = true;
+		}
+	}
+	
+	private void tryAddEnemies() {
+		if (cameraX < 4 * screenWidth) {
+			return;
+		}
+		float lastX = 100 * screenWidth;
+		if (counterWave._circles.size() > 0) {
+			lastX = counterWave._circles.get(counterWave._circles.size() - 1)._x;
+		}
+		if (counterWave2._circles.size() > 0) {
+			lastX = Math.min(counterWave2._circles.get(counterWave2._circles.size() - 1)._x, lastX);
+		}
+		if (!_secondWave || Math.random() > 0.5) {
+			if (lastX - cameraX > _enemyFrequency * _enemyFrequencyFraction) {
+				counterWave.addEnemy(cameraX);
+				_enemyFrequencyFraction = MathUtils.random(0.7f, 1.0f);
+			}
+		} else {
+			if (lastX - cameraX > _enemyFrequency * _enemyFrequencyFraction) {
+				counterWave2.addEnemy(cameraX);
+				_enemyFrequencyFraction = MathUtils.random(0.7f, 1.0f);
+			}
+		}
 	}
 }

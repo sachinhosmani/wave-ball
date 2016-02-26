@@ -11,7 +11,7 @@ import utils.ButtonAnimation;
 
 public class Menu {
 	public ArrayList<Button> buttons;
-	private float _screenWidth, _screenHeight;
+	protected float _screenWidth, _screenHeight;
 	protected ArrayList<ButtonAnimation> _animations = new ArrayList<ButtonAnimation>();
 	public Menu(float screenWidth, float screenHeight) {
 		buttons = new ArrayList<Button>();

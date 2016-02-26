@@ -10,8 +10,8 @@ import cross.CrossShare;
 public class DesktopLauncher {
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		config.width = 400;
-		config.height = 667;
+		config.width = 375;
+		config.height = 600;
 		new LwjglApplication(new WaveBall(new CrossRate() {
 			
 			@Override

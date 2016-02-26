@@ -3,6 +3,7 @@ package menus;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.math.Vector2;
 import com.wave.ball.WaveBall;
 
@@ -67,8 +68,8 @@ public class ScoreMenu extends Menu {
 	private float ballButtonWidth;
 	private float unlockSignWidth;
 	
-	private String scoreText = "score";
-	private String maxScoreText = "best";
+	private String scoreText = "Score";
+	private String maxScoreText = "Best";
 	private Color scoreColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
 	private float diamondsButtonWidth;
 	private Color diamondTextColor = new Color(0.0f, 0.0f, 0.0f, 1.0f);
@@ -82,10 +83,14 @@ public class ScoreMenu extends Menu {
 		_assetLoader = assetLoader;
 		_prefManager = prefManager;
 		
+		GlyphLayout bounds = new GlyphLayout();
+		bounds.setText(_assetLoader.ubuntuFont[_assetLoader.SMALL_FONT], "10");
+		float diamondScoreHeight = bounds.height;
+		
 		titleWidth = 1 / 2.1f;
 		titleHeight = titleWidth * 61.0f / 275.0f;
 		
-		playButtonWidth = 1 / 8.0f;
+		playButtonWidth = 1 / 5.5f;
 		diamondsButtonWidth = 1 / 18.0f;
 		
 		shareButtonWidth = 1 / 10.0f;
@@ -100,7 +105,7 @@ public class ScoreMenu extends Menu {
 		titlePositionEnd.y = 3.4f * 1 / 4.0f;
 		
 		playPositionEnd.x = 0.5f;
-		playPositionEnd.y = 0.7f;
+		playPositionEnd.y = 0.68f;
 		
 		titlePositionStart.x = 0.0f;
 		titlePositionStart.y = titlePositionEnd.y;
@@ -109,7 +114,7 @@ public class ScoreMenu extends Menu {
 		playPositionStart.y = playPositionEnd.y;
 		
 		scoreTextPositionStart.x = 0.0f;
-		scoreTextPositionStart.y = 0.55f;
+		scoreTextPositionStart.y = 0.57f;
 		
 		scoreTextPositionEnd.x = 0.5f;
 		scoreTextPositionEnd.y = scoreTextPositionStart.y;
@@ -121,7 +126,7 @@ public class ScoreMenu extends Menu {
 		scorePositionEnd.y = scorePositionStart.y;
 		
 		maxScoreTextPositionStart.x = 0.0f;
-		maxScoreTextPositionStart.y = scorePositionStart.y - 0.06f;
+		maxScoreTextPositionStart.y = scorePositionStart.y - 0.08f;
 		
 		maxScoreTextPositionEnd.x = 0.5f;
 		maxScoreTextPositionEnd.y = maxScoreTextPositionStart.y;
@@ -157,14 +162,13 @@ public class ScoreMenu extends Menu {
 		ballPositionEnd.y = ballPositionStart.y;
 		
 		
-		diamondsPositionEnd.x = diamondsButtonWidth + 0.007f;
+		diamondsPositionEnd.x = diamondsButtonWidth + 0.005f;
 		diamondsPositionEnd.y = 0.96f;
 		
 		diamondsPositionStart.x = diamondsPositionEnd.x;
 		diamondsPositionStart.y = diamondsPositionEnd.y;
 		
-		diamondsTextPositionEnd.x = diamondsPositionEnd.x + 0.1f;
-		diamondsTextPositionEnd.y = diamondsPositionEnd.y;
+		diamondsTextPositionEnd.y = diamondsPositionEnd.y + diamondScoreHeight / _screenHeight;
 		
 		diamondsTextPositionStart.x = diamondsTextPositionEnd.x;
 		diamondsTextPositionStart.y = diamondsTextPositionEnd.y;
@@ -176,25 +180,28 @@ public class ScoreMenu extends Menu {
 		unlockPositionEnd.y = unlockPositionStart.y;
 		
 		titleButton = addButton(titlePositionStart, titleWidth, titleHeight, assetLoader.title, 0);
-		playButton = addButton(playPositionStart, playButtonWidth, playButtonWidth, assetLoader.play, PLAY);
+		playButton = addButton(playPositionEnd, playButtonWidth, playButtonWidth, assetLoader.play, PLAY);
 		shareButton = addButton(sharePositionStart, shareButtonWidth, shareButtonWidth, assetLoader.share, SHARE);
 		rateButton = addButton(ratePositionStart, rateButtonWidth, rateButtonWidth, assetLoader.rate, RATE);
 		homeButton = addButton(homePositionStart, homeButtonWidth, homeButtonWidth, assetLoader.home, HOME);
 		ballButton = addButton(ballPositionStart, ballButtonWidth, ballButtonWidth, assetLoader.ball, BALL);
 		
-		scoreButton = addText(scorePositionStart, "", scoreColor, assetLoader.ubuntuFont[assetLoader.SMALL_FONT]);
-		maxScoreButton = addText(maxScorePositionStart, "", scoreColor, assetLoader.ubuntuFont[assetLoader.SMALL_FONT]);
+		scoreButton = addText(scorePositionStart, "", scoreColor, assetLoader.ubuntuFont[assetLoader.MEDIUM_FONT]);
+		maxScoreButton = addText(maxScorePositionStart, "", scoreColor, assetLoader.ubuntuFont[assetLoader.MEDIUM_FONT]);
 		
-		scoreTextButton = addText(scoreTextPositionStart, scoreText, scoreColor, assetLoader.ubuntuFont[assetLoader.SMALL_FONT]);
-		maxScoreTextButton = addText(maxScoreTextPositionStart, maxScoreText, scoreColor, assetLoader.ubuntuFont[assetLoader.SMALL_FONT]);
+		scoreTextButton = addText(scoreTextPositionStart, scoreText, scoreColor, assetLoader.ubuntuFont[assetLoader.MEDIUM_FONT]);
+		maxScoreTextButton = addText(maxScoreTextPositionStart, maxScoreText, scoreColor, assetLoader.ubuntuFont[assetLoader.MEDIUM_FONT]);
 		
 		diamonds = addButton(diamondsPositionStart, diamondsButtonWidth, diamondsButtonWidth, assetLoader.diamond, 0);
 		diamondsText = addText(diamondsTextPositionStart, _numDiamonds + "", diamondTextColor, assetLoader.ubuntuFont[assetLoader.SMALL_FONT]);
+		
+		diamondsTextPositionEnd.x = diamondsPositionEnd.x + 0.06f + diamondsText.w / 2 / _screenWidth;
+		
 		unlockSign = addButton(unlockPositionStart, unlockSignWidth, unlockSignWidth, assetLoader.lock, 0);
 		
 		_animations.add(new ButtonLinearAnimation(titleButton, titlePositionStart, titlePositionEnd, 500, screenWidth, screenHeight));
-		_animations.add(new ButtonLinearAnimation(playButton, playPositionStart, playPositionEnd, 500, screenWidth, screenHeight));
-		_animations.add(new ButtonScaleAnimation(playButton, 0.9f, 1.2f, 800));
+//		_animations.add(new ButtonLinearAnimation(playButton, playPositionStart, playPositionEnd, 500, screenWidth, screenHeight));
+//		_animations.add(new ButtonScaleAnimation(playButton, 0.9f, 1.2f, 800));
 		_animations.add(new ButtonLinearAnimation(scoreButton, scorePositionStart, scorePositionEnd, 500, screenWidth, screenHeight));
 		_animations.add(new ButtonLinearAnimation(shareButton, sharePositionStart, sharePositionEnd, 500, screenWidth, screenHeight));
 		_animations.add(new RotationAnimation(shareButton, -15.0f, 15.0f, 500));
@@ -206,6 +213,7 @@ public class ScoreMenu extends Menu {
 		_animations.add(new ButtonLinearAnimation(homeButton, homePositionStart, homePositionEnd, 500, screenWidth, screenHeight));
 		_animations.add(new ButtonLinearAnimation(ballButton, ballPositionStart, ballPositionEnd, 500, screenWidth, screenHeight));
 		_animations.add(new ButtonLinearAnimation(unlockSign, unlockPositionStart, unlockPositionEnd, 500, screenWidth, screenHeight));
+		_animations.add(new ButtonLinearAnimation(diamondsText, diamondsTextPositionStart, diamondsTextPositionEnd, 500, screenWidth, screenHeight));
 		unlockAnimation = new RotationAnimation(unlockSign, -15.0f, 15.0f, 500);
 	}
 	public void update() {
@@ -223,6 +231,8 @@ public class ScoreMenu extends Menu {
 		maxScoreButton.changeLabel(maxScore + "");
 		_numDiamonds = numDiamonds;
 		diamondsText.changeLabel(_numDiamonds + "");
+		diamondsTextPositionEnd.x = diamondsPositionEnd.x + 0.06f + diamondsText.w / 2 / _screenWidth;
+		
 		ballButton.sprite = _assetLoader.ball;
 		_animations.remove(unlockAnimation);
 		if (_prefManager.getPoints() >= WaveBall.POINTS_PER_BALL) {

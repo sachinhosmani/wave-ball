@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
+import com.wave.ball.WaveBall;
 
 import utils.AssetLoader;
 import utils.Constants;
@@ -34,6 +35,7 @@ public class Wave {
 	protected TimeSnapshot _plusOneTimeSnapshot = TimeSnapshotStore.get();
 	protected float _diamondRadius, _enemyRadius;
 	protected boolean _diamondRadiusIncreasing = true;
+	private float _minX = -10.0f;
 	private long _startTime = System.currentTimeMillis();
 	
 	public enum CircleType {
@@ -65,20 +67,25 @@ public class Wave {
 		return _startX;
 	}
 	public void render(SpriteBatch renderer, float cameraX, Color color) {
-		render(renderer, cameraX, false, color);
+		render(renderer, cameraX, false, color, 0);
 	}
-	public void render(SpriteBatch renderer, float cameraX, boolean opposite, Color color) {
+	public void render(SpriteBatch renderer, float cameraX, boolean opposite, Color color, int num) {
 		float y = 0.0f;
 		float prevX = (_startX != null) ? _startX : Math.max(0.0f, cameraX - _screenWidth /10.0f);
-		_waveEquation.get(prevX, _tmpVector, !opposite);
+		prevX = Math.max(prevX, _minX);
+		_waveEquation.get(prevX, _tmpVector, !opposite, num);
 		float prevY = _tmpVector.y;
 		if (opposite) {
-			prevY = _screenHeight / 2.0f + (_screenHeight / 2.0f - prevY) / 2.0f;
+			if (num == 1) {
+				prevY = _screenHeight / 2.0f + 0.85f * (_screenHeight / 2.0f - prevY) / 2.0f;
+			} else {
+				prevY = _screenHeight / 2.0f + 1.35f * (_screenHeight / 2.0f - prevY);
+			}
 		}
 		float damping = 1.0f;
 		float dampingFraction = 1.0f;
 		boolean firstTime = true;
-		for (float x = Math.max(0.0f, cameraX - _screenWidth /10.0f); x <= cameraX + _screenWidth * 1.1f; ) {
+		for (float x = Math.max(_minX, Math.max(0.0f, cameraX - _screenWidth /10.0f)); x <= cameraX + _screenWidth * 1.1f; ) {
 			x += _screenWidth / 200.0f / Math.min(Math.max(Math.sqrt(_tmpVector.len()), 1.0f), 20.0f);
 			if (x < prevX) {
 				continue;
@@ -86,10 +93,14 @@ public class Wave {
 				firstTime = false;
 				prevX = x;
 			}
-			_waveEquation.get(x, _tmpVector, !opposite);
+			_waveEquation.get(x, _tmpVector, !opposite, num);
 			y = _tmpVector.y;
 			if (opposite) {
-				y = _screenHeight / 2.0f + (_screenHeight / 2.0f - y) / 2.0f;
+				if (num == 1) {
+					y = _screenHeight / 2.0f + 0.85f * (_screenHeight / 2.0f - y) / 2.0f;
+				} else {
+					y = _screenHeight / 2.0f + 1.35f * (_screenHeight / 2.0f - y);
+				}
 			}
 			if (!opposite && x - cameraX > _screenWidth * 0.8f) {
 				damping *= dampingFraction;
@@ -154,7 +165,7 @@ public class Wave {
 			
 			angle = 180 + angle;
 		}
-		Sprite wave = type == WaveType.MAIN ? _assetLoader.wave1 : (type == WaveType.COUNTER ? _assetLoader.wave2 : _assetLoader.shadow);
+		Sprite wave = type == WaveType.MAIN ? _assetLoader.wave1 : _assetLoader.wave2;
 		wave.setBounds(x1 - width / 2.0f, y1, width, Math.abs(y2 - y1));
 		wave.setOriginCenter();
 		wave.setRotation(angle - 90);
@@ -259,8 +270,8 @@ public class Wave {
 			asset = _assetLoader.diamond;
 			break;
 		case HERO:
-			asset = _assetLoader.hero;
-			break;
+//			asset = _assetLoader.hero;
+//			break;
 		default:
 			asset = _assetLoader.ball;
 		}
@@ -318,5 +329,14 @@ public class Wave {
 			_diamondRadiusIncreasing = true;
 		}
 		plusOneUpdate();
+	}
+	public static int getScoreFromBallX(float ballX, float screenWidth) {
+		return (int) (ballX - WaveBall._ballPositionFraction * screenWidth) / (int) (screenWidth / 6); 
+	}
+	public static float getBallXFromScore(long _lastScore, float screenWidth) {
+		return _lastScore *  (int) (screenWidth / 6) + WaveBall._ballPositionFraction * screenWidth ;
+	}
+	public void setMinX(float x) {
+		_minX = x;
 	}
 }

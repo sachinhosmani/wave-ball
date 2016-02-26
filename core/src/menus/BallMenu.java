@@ -3,6 +3,7 @@ package menus;
 import java.awt.List;
 import java.util.ArrayList;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 import com.wave.ball.WaveBall;
@@ -24,11 +25,13 @@ public class BallMenu extends Menu {
 	
 	private Vector2 _homePositionStart = new Vector2();
 	private Vector2 _homePositionEnd = new Vector2();
+	private Vector2 _chooseBallPositionStart = new Vector2();
 	private Button _home;
 	private AssetLoader _assetLoader;
 	private PreferenceManager _prefManager;
 	private float _screenWidth, _screenHeight;
 	private RotationAnimation _unlockAnimation;
+	private String _chooseBallText = "Choose ball";
 	public BallMenu(float screenWidth, float screenHeight, int maxBallUnlock, PreferenceManager prefManager, AssetLoader assetLoader) {
 		super(screenWidth, screenHeight);
 		_assetLoader = assetLoader;
@@ -49,7 +52,12 @@ public class BallMenu extends Menu {
 		
 		_homePositionEnd.x = 0.12f;
 		_homePositionEnd.y = _homePositionStart.y;
+		
+		_chooseBallPositionStart.x = 0.5f;
+		_chooseBallPositionStart.y = 0.92f;
 		_home = addButton(_homePositionEnd, homeWidth, homeWidth, assetLoader.home, HOME);
+		
+		addText(_chooseBallPositionStart, _chooseBallText, new Color(0.0f, 0.0f, 0.0f, 1.0f), assetLoader.ubuntuFont[assetLoader.SMALL_FONT]);
 		
 		Vector2 startPosition = new Vector2(0.0f, 0.0f);
 		int count = 0;
